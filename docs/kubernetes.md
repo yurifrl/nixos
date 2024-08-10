@@ -2,3 +2,5 @@
 - [Setting up Kubernetes on NixOS - Stack Overflow](https://stackoverflow.com/questions/49963703/setting-up-kubernetes-on-nixos)
 - [nixos-ha-kubernetes/modules/controlplane/apiserver.nix at f270d173f1efde7704b4d6dd805a27a3d2c1cba7 · justinas/nixos-ha-kubernetes](https://github.com/justinas/nixos-ha-kubernetes/blob/f270d173f1efde7704b4d6dd805a27a3d2c1cba7/modules/controlplane/apiserver.nix)
 - [nixos/modules/services/cluster/kubernetes/apiserver.nix - NixOS/nixpkgs - Sourcegraph](https://sourcegraph.com/github.com/NixOS/nixpkgs/-/blob/nixos/modules/services/cluster/kubernetes/apiserver.nix)
+
+-  [nixos-configuration/containers/kube-master/flake.nix at 040c8e3b3fd168d704cf474e794de317b9493fb1 · JD95/nixos-configuration](https://github.com/JD95/nixos-configuration/blob/040c8e3b3fd168d704cf474e794de317b9493fb1/containers/kube-master/flake.nix#L31)
