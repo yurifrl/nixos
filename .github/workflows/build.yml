@@ -1,0 +1,32 @@
+name: "Build NixOS Image"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      
+      - name: Enable Nix Flakes
+        run: |
+          mkdir -p ~/.config/nix
+          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+      - name: Build NixOS Image
+        run: nix build .#nixosConfigurations.hal9000.config.system.build.digitalOceanImage
+
+      - name: Upload Image Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nixos-digital-ocean-image
+          path: result/nixos.qcow2.bz2
+          retention-days: 5 # Keeps the artifact for 5 days 

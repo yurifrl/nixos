@@ -1,0 +1,11 @@
+x-base-service: &base_service
+  build:
+    context: .
+    dockerfile: ./Dockerfile.qemu
+  volumes:
+    - .:/workdir
+
+services:
+  sh:
+    <<: *base_service
+    entrypoint: bash

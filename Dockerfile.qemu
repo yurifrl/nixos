@@ -7,7 +7,8 @@ RUN echo "extra-platforms = x86_64-linux" >> /etc/nix/nix.conf
 RUN echo "system-features = kvm" >> /etc/nix/nix.conf
 
 # Install QEMU and set up binfmt support
-RUN nix-env -iA nixpkgs.go-task
+RUN nix-env -iA nixpkgs.qemu nixpkgs.go-task
+RUN nix shell nixpkgs#qemu -c qemu-x86_64 --version
 
 # Create build directory
 WORKDIR /workdir

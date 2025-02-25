@@ -1,0 +1,11 @@
+
+version: "3"
+
+tasks:
+  build:
+    cmds:
+      - nix build .#nixosConfigurations.hal9000.config.system.build.digitalOceanImage
+
+  upload:
+    cmds:
+      - doctl compute image create nix-image--region nyc1 --image-file builds/nixos-image.qcow2 --image-description "Custom nix image"
