@@ -11,18 +11,32 @@
     nixpkgs,
     deploy-rs,
     ...
-  }: {
+  } @ inputs: {
     nixosConfigurations = {
       digitalOcean = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = {
-          inherit inputs;
+          inherit inputs nixpkgs;
         };
         modules = [
+          "${nixpkgs}/nixos/modules/virtualisation/digital-ocean-image.nix"
           ./configurations.nix
         ];
       };
     };
+
+    # Separate image configuration for faster switching
+    images = {
+      digitalOcean = 
+        (self.nixosConfigurations.digitalOcean.extendModules {
+          modules = [
+            {
+              virtualisation.digitalOceanImage.compressionMethod = "bzip2";
+            }
+          ];
+        }).config.system.build.digitalOceanImage;
+    };
+
     deploy.nodes = {
       digitalOcean = {
         hostname = "167.172.145.100";
