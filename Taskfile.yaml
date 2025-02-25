@@ -4,8 +4,8 @@ version: "3"
 tasks:
   build:
     cmds:
-      - nix build .#nixosConfigurations.hal9000.config.system.build.digitalOceanImage
+      - nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
 
   upload:
     cmds:
-      - doctl compute image create nix-image--region nyc1 --image-file builds/nixos-image.qcow2 --image-description "Custom nix image"
+      - doctl compute image create nix-image --region nyc1 --image-url "https://github.com/yurifrl/nixos/actions/runs/13526601851/artifacts/2650149472" --image-description "Custom nix image"

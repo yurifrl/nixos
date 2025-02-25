@@ -9,6 +9,8 @@ RUN echo "system-features = kvm" >> /etc/nix/nix.conf
 # Install QEMU and set up binfmt support
 RUN nix-env -iA nixpkgs.go-task
 
+RUN nix-env -iA nixpkgs.deploy-rs
+
 # Create build directory
 WORKDIR /workdir
 
@@ -16,4 +18,4 @@ WORKDIR /workdir
 COPY . .
 
 # 
-#  nix build .#nixosConfigurations.hal9000.config.system.build.digitalOceanImage
+#  nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
