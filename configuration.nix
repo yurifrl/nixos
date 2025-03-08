@@ -4,7 +4,6 @@
 {
   imports = [
     ./hardware.nix
-    ./modules/nginx.nix
     ./modules/ssh.nix
     ./modules/cloudflared.nix
     ./modules/tailscale.nix
