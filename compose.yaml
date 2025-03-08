@@ -2,10 +2,18 @@ x-base-service: &base_service
   build:
     context: .
     dockerfile: ./Dockerfile.qemu
+  network_mode: host
+  environment:
+    SSH_AUTH_SOCK: /ssh-agent
+    NIXPKGS_ALLOW_BROKEN: 1
+    NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM: 1
   volumes:
     - .:/workdir
-
+    - $SSH_AUTH_SOCK:/ssh-agent
 services:
   sh:
     <<: *base_service
+    # ssh-keyscan -t ed25519 45.55.248.197 >> ~/.ssh/known_hosts    
+    environment:
+      SSH_KNOWN_HOSTS: "45.55.248.197 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJZXyJin9m7KrFCynYW/8E72u4iK5q9lhk1Ep8lXVtzp"
     entrypoint: bash

@@ -39,7 +39,7 @@
 
     deploy.nodes = {
       digitalOcean = {
-        hostname = "167.172.145.100";
+        hostname = "45.55.248.197";
         profiles.system = {
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
           sshUser = "root";
