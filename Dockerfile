@@ -1,21 +1,18 @@
 FROM nixos/nix
 
-
-# Enable nix features and cross-compilation
 RUN echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
 RUN echo "extra-platforms = x86_64-linux" >> /etc/nix/nix.conf
 RUN echo "system-features = kvm" >> /etc/nix/nix.conf
 
 # Install QEMU and set up binfmt support
-RUN nix-env -iA nixpkgs.go-task
+RUN nix-env -iA nixpkgs.qemu nixpkgs.go-task nixpkgs.deploy-rs
+RUN nix shell nixpkgs#qemu -c qemu-x86_64 --version
 
-RUN nix-env -iA nixpkgs.deploy-rs
+ARG DROPLET_IP
 
-# Create build directory
+RUN mkdir ~/.ssh
+RUN ssh-keyscan -t ed25519 ${DROPLET_IP} >> ~/.ssh/known_hosts
+
 WORKDIR /workdir
 
-# Copy your flake files
 COPY . .
-
-# 
-#  nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage

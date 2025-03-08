@@ -6,12 +6,7 @@
   };
 
   # Define the system configuration
-  outputs = 
-    { self
-    , nixpkgs
-    , deploy-rs
-    , ...
-    } @ inputs: {
+  outputs = { self , nixpkgs, deploy-rs, ... } @ inputs: {
     packages.x86_64-linux = import ./packages { 
       pkgs = nixpkgs.legacyPackages.x86_64-linux; 
     };
@@ -23,7 +18,7 @@
           inherit inputs nixpkgs;
         };
         modules = [
-          ./hosts/digitalocean
+          ./configuration.nix
         ];
       };
     };

@@ -1,7 +1,8 @@
 x-base-service: &base_service
   build:
     context: .
-    dockerfile: ./Dockerfile.qemu
+    args:
+      DROPLET_IP: $DROPLET_IP
   network_mode: host
   environment:
     SSH_AUTH_SOCK: /ssh-agent
@@ -13,7 +14,4 @@ x-base-service: &base_service
 services:
   sh:
     <<: *base_service
-    # ssh-keyscan -t ed25519 45.55.248.197 >> ~/.ssh/known_hosts    
-    environment:
-      SSH_KNOWN_HOSTS: "45.55.248.197 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJZXyJin9m7KrFCynYW/8E72u4iK5q9lhk1Ep8lXVtzp"
     entrypoint: bash
