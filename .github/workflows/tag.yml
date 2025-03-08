@@ -1,37 +1,21 @@
-name: "Auto Tag on Version Change"
-
+name: Bump version
 on:
   push:
     branches:
-      - main  # Adjust this if your default branch is different
-    paths:
-      - 'VERSION'  # Only trigger when VERSION file changes
-
+      - master
 jobs:
-  create-tag:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Needed for creating tags
-    
     steps:
       - uses: actions/checkout@v4
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
         with:
-          fetch-depth: 0  # Fetch all history for proper versioning
-      
-      - name: Get Version
-        id: get_version
-        run: |
-          VERSION=$(cat VERSION)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-      
-      - name: Create Tag
-        run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          # Check if tag already exists
-          if ! git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            git tag "v$VERSION"
-            git push origin "v$VERSION"
-            echo "Created and pushed tag v$VERSION"
-          else
-            echo "Tag v$VERSION already exists, skipping"
-          fi 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
