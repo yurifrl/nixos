@@ -28,9 +28,10 @@
       };
     };
 
-    # Separate image configuration for faster switching
-    images = {
-      digitalOcean = 
+    # System-specific outputs
+    x86_64-linux = rec {
+      # Digital Ocean image
+      images.digitalOcean = 
         (self.nixosConfigurations.digitalOcean.extendModules {
           modules = [
             {
@@ -38,10 +39,9 @@
             }
           ];
         }).config.system.build.digitalOceanImage;
-    };
 
-    deploy.nodes = {
-      digitalOcean = {
+      # Deployment configuration
+      deploy.nodes.digitalOcean = {
         hostname = "45.55.248.197";
         profiles.system = {
           path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
@@ -50,6 +50,8 @@
         };
       };
     };
-    checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+
+    # Deployment checks
+    checks.x86_64-linux = deploy-rs.lib.x86_64-linux.deployChecks self.x86_64-linux.deploy;
   };
 }

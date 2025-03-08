@@ -9,7 +9,7 @@
 
   # Add any DigitalOcean-specific hardware configurations here
   boot.loader.grub.device = "/dev/vda";
-  fileSystems."/" = {
+  fileSystems."/" = lib.mkForce {
     device = "/dev/vda1";
     fsType = "ext4";
   };
