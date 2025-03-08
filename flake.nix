@@ -1,12 +1,12 @@
 {
   # Declare the inputs/dependencies
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     deploy-rs.url = "github:serokell/deploy-rs";
   };
 
   # Define the system configuration
-  outputs = { self , nixpkgs, deploy-rs, ... } @ inputs: {
+  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: {
     packages.x86_64-linux = import ./packages { 
       pkgs = nixpkgs.legacyPackages.x86_64-linux; 
     };
@@ -19,14 +19,14 @@
         };
         modules = [
           ./configuration.nix
+          # {
+          #   nixpkgs.crossSystem = {
+          #     config = "x86_64-unknown-linux-gnu";
+          #     system = "x86_64-linux";
+          #   };
+          # }
         ];
       };
-    };
-
-    # Type declarations for custom outputs
-    outputsBuilder = channels: {
-      images = true;
-      deploy = true;
     };
 
     # Separate image configuration for faster switching
@@ -41,13 +41,15 @@
         }).config.system.build.digitalOceanImage;
     };
 
-    deploy.nodes = {
-      digitalOcean = {
-        hostname = "45.55.248.197";
-        profiles.system = {
-          path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
-          sshUser = "root";
-          remoteBuild = true;
+    deploy = {
+      nodes = {
+        digitalOcean = {
+          hostname = builtins.getEnv "DROPLET_IP";
+          profiles.system = {
+            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
+            sshUser = "root";
+            remoteBuild = true;
+          };
         };
       };
     };

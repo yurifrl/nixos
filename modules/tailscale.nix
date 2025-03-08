@@ -1,14 +1,14 @@
-{ pkgs, pkgs-unstable, ... }:
+{ pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
     jq
-    pkgs-unstable.tailscale
+    tailscale
   ];
 
   # Tailscale service configuration
   services.tailscale = {
     enable = true;
-    package = pkgs-unstable.tailscale;
+    package = pkgs.tailscale;
   };
 
   systemd.services.tailscale-autoconnect = {

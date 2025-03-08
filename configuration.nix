@@ -35,4 +35,6 @@
   # settings for stateful data, like file locations and database versions
   # on your system were taken.
   system.stateVersion = "25.05";
+
+  # boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
 } 

@@ -1,10 +1,26 @@
-
 version: "3"
 
+vars:
+  BUILD: .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
+  CACHE: /nix-cache
+
 tasks:
-  build:
+  deploy:
+    desc: Deploy the NixOS image
     cmds:
-      - nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
+      - deploy
+
+  build:
+    desc: Build the NixOS image
+    cmds:
+      - nix build ${BUILD} --system x86_64-linux
+
+  cache:
+    desc: Cache build products and dependencies
+    cmds:
+      - DERIVATION=$(nix path-info --derivation ${BUILD})
+      - mapfile -t DEPENDENCIES < <(nix-store --query --requisites --include-outputs "${DERIVATION}")
+      - printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "${CACHE}"
 
   upload:
     cmds:

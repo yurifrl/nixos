@@ -5,12 +5,18 @@ x-base-service: &base_service
       DROPLET_IP: $DROPLET_IP
   network_mode: host
   environment:
+    DROPLET_IP: $DROPLET_IP
     SSH_AUTH_SOCK: /ssh-agent
     NIXPKGS_ALLOW_BROKEN: 1
     NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM: 1
   volumes:
     - .:/workdir
     - $SSH_AUTH_SOCK:/ssh-agent
+    - nix-cache:/nix-cache
+
+volumes:
+  nix-cache: {}
+
 services:
   sh:
     <<: *base_service
