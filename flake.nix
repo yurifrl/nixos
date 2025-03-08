@@ -6,12 +6,16 @@
   };
 
   # Define the system configuration
-  outputs = {
-    self,
-    nixpkgs,
-    deploy-rs,
-    ...
-  } @ inputs: {
+  outputs = 
+    { self
+    , nixpkgs
+    , deploy-rs
+    , ...
+    } @ inputs: {
+    packages.x86_64-linux = import ./packages { 
+      pkgs = nixpkgs.legacyPackages.x86_64-linux; 
+    };
+
     nixosConfigurations = {
       digitalOcean = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
@@ -19,8 +23,7 @@
           inherit inputs nixpkgs;
         };
         modules = [
-          "${nixpkgs}/nixos/modules/virtualisation/digital-ocean-image.nix"
-          ./configurations.nix
+          ./hosts/digitalocean
         ];
       };
     };
