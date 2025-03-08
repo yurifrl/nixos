@@ -3,6 +3,13 @@ on:
   push:
     branches:
       - main
+
+
+permissions:
+  contents: write  # Explicitly set repository contents permission
+  issues: write    # Required for creating GitHub releases
+  pull-requests: write # Required for creating GitHub releases
+      
 jobs:
   build:
     runs-on: ubuntu-latest
