@@ -6,6 +6,8 @@
     ./hardware.nix
     ./modules/nginx.nix
     ./modules/ssh.nix
+    ./modules/cloudflared.nix
+    ./modules/tailscale.nix
     ./users/root.nix
   ];
 
@@ -18,6 +20,10 @@
   ];
 
   # Swap configuration
+  systemd.tmpfiles.rules = [
+    "d /swap 0755 root root -"
+  ];
+  
   swapDevices = [{
     device = "/swap/swapfile";
     size = 1024 * 2; # 2 GB

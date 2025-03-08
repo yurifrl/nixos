@@ -2,17 +2,12 @@
 { config, lib, pkgs, ... }:
 
 {
-  # ACME/Let's Encrypt configuration
-  security.acme = {
-    acceptTerms = true;
-    defaults.email = "yurifl03@syscd.live";
-  };
-
-  # Nginx configuration
   services.nginx = {
     enable = true;
+    # Listen only on localhost since Cloudflared will proxy the requests
+    defaultListenAddresses = [ "127.0.0.1" ];
     virtualHosts."hal9000.example" = {
-      enableACME = true;
+      # Force HTTPS since Cloudflare will handle SSL termination
       forceSSL = true;
       root = pkgs.runCommand "www-dir" { } ''
         mkdir -p $out

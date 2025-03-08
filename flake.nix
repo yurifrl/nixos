@@ -23,6 +23,13 @@
       };
     };
 
+    # Type declarations for custom outputs
+    outputsBuilder = channels: {
+      images = true;
+      deploy = true;
+    };
+
+    # Separate image configuration for faster switching
     images = {
       digitalOcean = 
         (self.nixosConfigurations.digitalOcean.extendModules {
