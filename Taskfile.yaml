@@ -3,6 +3,7 @@ version: "3"
 vars:
   BUILD: .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
   CACHE: /nix-cache
+  NIX_SECRET_KEY_FILE: "~/.ssh/cache-priv-key.pem"
 tasks:
   deploy:
     desc: Deploy the NixOS image
@@ -17,9 +18,17 @@ tasks:
   cache:
     desc: Cache build products and dependencies
     cmds:
-      - DERIVATION=$(nix path-info --derivation {{.BUILD}})
-      - mapfile -t DEPENDENCIES < <(nix-store --query --requisites --include-outputs "${DERIVATION}")
-      # - printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "{{.CACHE}}"
+      - |
+        DERIVATION=$(nix path-info --derivation {{.BUILD}})
+        mapfile -t DEPENDENCIES < <(nix-store --query --requisites --include-outputs "${DERIVATION}")
+        mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
+        
+
+        # Sign the dependencies
+        printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "~/.ssh/cache-priv-key.pem" --recursive
+        
+        # Copy to cache
+        printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "/nix-cache"
 
 # $ echo "${BUILDS[@]}" | xargs nix build
 

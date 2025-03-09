@@ -26,6 +26,14 @@ jobs:
           mkdir -p ~/.config/nix
           echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: ${{ runner.os }}-nix-${{ hashFiles('**/*.nix') }}
+          paths: |
+            /nix/store
+            /nix-cache
+
       - name: Build NixOS Image
         run: |
           nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
@@ -56,21 +64,19 @@ jobs:
           ls -la result/
           echo "================================================"
           
-          # Find the generated qcow2.bz2 file
-          GENERATED_FILE=$(find result -type l -name "nixos-image-digital-ocean-*.qcow2.bz2")
+          # Copy the qcow2.bz2 file with a simple name
+          mv result/*qcow2.bz2 nixos.qcow2.bz2
           
-          if [ -z "$GENERATED_FILE" ]; then
-            echo "Error: No nixos image file found in result directory"
-            echo "Contents of result directory:"
-            ls -R result/
+          if [ ! -f nixos.qcow2.bz2 ]; then
+            echo "Error: Failed to copy nixos image file"
             exit 1
           fi
           
-          echo "Found image file: $GENERATED_FILE"
+          echo "Found image file: nixos.qcow2.bz2"
           
           # Upload to GCS with public access
           OBJECT_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
-          gsutil cp "$GENERATED_FILE" gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
+          gsutil cp nixos.qcow2.bz2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           
           gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           

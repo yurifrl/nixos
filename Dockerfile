@@ -10,8 +10,13 @@ RUN nix shell nixpkgs#qemu -c qemu-x86_64 --version
 
 ARG DROPLET_IP
 
-RUN mkdir ~/.ssh
-RUN ssh-keyscan -t ed25519 ${DROPLET_IP} >> ~/.ssh/known_hosts
+# Set up SSH directory
+RUN mkdir -p /root/.ssh
+RUN ssh-keyscan -t ed25519 ${DROPLET_IP} >> /root/.ssh/known_hosts
+# Generate Nix signing key for binary cache
+RUN nix-store --generate-binary-cache-key cache-key-1 /root/.ssh/cache-priv-key.pem /root/.ssh/cache-pub-key.pem && \
+    chmod 600 /root/.ssh/cache-priv-key.pem && \
+    chmod 644 /root/.ssh/cache-pub-key.pem
 
 WORKDIR /workdir
 
