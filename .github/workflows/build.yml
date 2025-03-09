@@ -43,9 +43,16 @@ jobs:
 
       - name: Upload to GCS and create image
         run: |
+          # Find the generated qcow2.bz2 file
+          GENERATED_FILE=$(find result -name "*.qcow2.bz2")
+          if [ -z "$GENERATED_FILE" ]; then
+            echo "Error: No qcow2.bz2 file found in result directory"
+            exit 1
+          fi
+          
           # Upload to GCS with public access
           OBJECT_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
-          gsutil cp result/nixos.qcow2.bz2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
+          gsutil cp "$GENERATED_FILE" gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           
           gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           

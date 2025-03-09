@@ -3,7 +3,6 @@ version: "3"
 vars:
   BUILD: .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
   CACHE: /nix-cache
-
 tasks:
   deploy:
     desc: Deploy the NixOS image
