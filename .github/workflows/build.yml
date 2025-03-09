@@ -14,6 +14,8 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+    env:
+      NIXOS_IMAGE_NAME: "nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
 
     steps:
       - uses: actions/checkout@v4
@@ -37,11 +39,6 @@ jobs:
       - name: Build NixOS Image
         run: |
           nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
-          echo "================================================"  
-          ls -la result/
-          echo "================================================"  
-          ls -la result/nixos*
-          echo "================================================"  
 
       - name: Google Auth
         id: auth
@@ -57,13 +54,6 @@ jobs:
 
       - name: Upload to GCS and create image
         run: |
-          echo "Listing workspace contents:"
-          ls -la
-          echo "================================================"
-          echo "Listing result directory contents:"
-          ls -la result/
-          echo "================================================"
-          
           # Copy the qcow2.bz2 file with a simple name
           cp result/*qcow2.bz2 nixos.qcow2.bz2
           
@@ -75,13 +65,12 @@ jobs:
           echo "Found image file: nixos.qcow2.bz2"
           
           # Upload to GCS with public access
-          OBJECT_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
-          gsutil cp nixos.qcow2.bz2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
+          gsutil cp nixos.qcow2.bz2 gs://${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME
           
-          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
+          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME
           
           # Get the public URL
-          IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME"
+          IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME"
           echo "::add-mask::$IMAGE_URL"
           echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
 
@@ -92,7 +81,7 @@ jobs:
   
       - name: Create DigitalOcean Image
         run: |
-          doctl compute image create nix-image \
+          doctl compute image create "$NIXOS_IMAGE_NAME" \
             --region nyc1 \
             --image-url "${{ env.IMAGE_URL }}" \
             --image-description "NixOS image built on $(date +%Y-%m-%d)"
