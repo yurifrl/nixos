@@ -65,7 +65,7 @@ jobs:
           echo "================================================"
           
           # Copy the qcow2.bz2 file with a simple name
-          mv result/*qcow2.bz2 nixos.qcow2.bz2
+          cp result/*qcow2.bz2 nixos.qcow2.bz2
           
           if [ ! -f nixos.qcow2.bz2 ]; then
             echo "Error: Failed to copy nixos image file"
