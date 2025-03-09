@@ -45,16 +45,11 @@
     deploy = {
       nodes = {
         digitalOcean = {
-          hostname = dropletIp;
+          hostname = builtins.getEnv "DROPLET_IP";
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";
             remoteBuild = true;
-            # Add SSH options for more verbose output during deployment
-            sshOpts = [
-              "-o" "StrictHostKeyChecking=yes"
-              "-v"
-            ];
           };
         };
       };

@@ -6,7 +6,6 @@ RUN echo "system-features = kvm" >> /etc/nix/nix.conf
 
 # Install QEMU, task, deploy-rs, and Bazel with dependencies
 RUN nix-env -iA \
-    nixpkgs.qemu \
     nixpkgs.go-task \
     nixpkgs.deploy-rs \
     nixpkgs.bazel_6 \
