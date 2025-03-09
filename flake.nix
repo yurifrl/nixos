@@ -41,11 +41,15 @@
           ];
         }).config.system.build.digitalOceanImage;
     };
+    environment.sessionVariables = rec {
+      DROPLET_IP  = "${DROPLET_IP}";
+    };
 
     deploy = {
       nodes = {
         digitalOcean = {
-          hostname = builtins.getEnv "45.55.248.197";
+          hostname = "45.55.248.197";
+          # hostname = builtins.getEnv "DROPLET_IP";
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";

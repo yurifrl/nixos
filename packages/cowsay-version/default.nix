@@ -4,7 +4,7 @@
 let
   script = ''
     #!/bin/sh
-    ${cowsay}/bin/cowsay "$1 v1.0.0"
+    ${cowsay}/bin/cowsay "$1 v1.0.1"
   '';
 in
 writeShellScriptBin "cowsay-version" script 
