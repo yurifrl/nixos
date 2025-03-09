@@ -59,15 +59,23 @@ jobs:
           
           if [ ! -f nixos.qcow2.bz2 ]; then
             echo "Error: Failed to copy nixos image file"
+            ls -la result/
             exit 1
           fi
           
           echo "Found image file: nixos.qcow2.bz2"
+          echo "NIXOS_IMAGE_NAME: $NIXOS_IMAGE_NAME"
+          echo "GCS Bucket: ${{ secrets.GCS_BUCKET_NAME }}"
           
           # Upload to GCS with public access
-          gsutil cp nixos.qcow2.bz2 gs://${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME
+          gsutil cp -v nixos.qcow2.bz2 "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
           
-          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME
+          if [ $? -ne 0 ]; then
+            echo "Error: Failed to upload to GCS"
+            exit 1
+          fi
+          
+          gsutil acl ch -u AllUsers:R "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
           
           # Get the public URL
           IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME"
