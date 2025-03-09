@@ -19,6 +19,7 @@
         };
         modules = [
           ./configuration.nix
+          ./hardware.nix
           # {
           #   nixpkgs.crossSystem = {
           #     config = "x86_64-unknown-linux-gnu";

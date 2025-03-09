@@ -3,7 +3,6 @@
 
 {
   imports = [
-    ./hardware.nix
     ./modules/ssh.nix
     ./modules/cloudflared.nix
     ./modules/tailscale.nix

@@ -25,3 +25,34 @@ tasks:
   upload:
     cmds:
       - doctl compute image create nix-image --region nyc1 --image-url "https://github.com/yurifrl/nixos/actions/runs/13526601851/artifacts/2650149472" --image-description "Custom nix image"
+
+  tag:
+    desc: Create and push a new version tag
+    cmds:
+      - |
+        VERSION=$(cat VERSION)
+        IFS='.' read -ra VER <<< "$VERSION"
+        
+        case "{{.CLI_ARGS}}" in
+          "major")
+            NEW_VERSION="$((${VER[0]} + 1)).0.0"
+            ;;
+          "minor")  
+            NEW_VERSION="${VER[0]}.$((${VER[1]} + 1)).0"
+            ;;
+          "patch"|"")
+            NEW_VERSION="${VER[0]}.${VER[1]}.$((${VER[2]} + 1))"
+            ;;
+          *)
+            echo "Invalid argument. Use 'major', 'minor', or 'patch'"
+            exit 1
+            ;;
+        esac
+        
+        echo "$NEW_VERSION" > VERSION
+        git add VERSION
+        git commit -m "chore: bump version to $NEW_VERSION"
+        git tag "v$NEW_VERSION"
+        git push origin "v$NEW_VERSION"
+        git push origin main
+
