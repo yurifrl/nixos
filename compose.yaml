@@ -21,3 +21,9 @@ services:
   sh:
     <<: *base_service
     entrypoint: bash
+  gatus:
+    image: twinproduction/gatus
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./modules/gatus/config.yaml:/etc/gatus/config.yaml

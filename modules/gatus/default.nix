@@ -1,13 +1,5 @@
-{ config, lib, pkgs, ... }:
-
-let
-  # Import the configuration from the same directory
-  gatusSettings = import ./config.nix;
-  
-  # Generate config file
-  format = pkgs.formats.yaml {};
-  configFile = format.generate "gatus-config.yaml" gatusSettings;
-in {
+{ config, pkgs, ... }:
+{
   # Fixed user/group
   users.users.gatus = {
     isSystemUser = true;
@@ -34,7 +26,7 @@ in {
     };
     
     environment = {
-      GATUS_CONFIG_PATH = configFile;
+      GATUS_CONFIG_PATH = ./config.yaml;
     };
   };
 } 
