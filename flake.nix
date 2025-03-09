@@ -41,10 +41,6 @@
           ];
         }).config.system.build.digitalOceanImage;
     };
-    environment.sessionVariables = rec {
-      DROPLET_IP  = "${DROPLET_IP}";
-    };
-
     deploy = {
       nodes = {
         digitalOcean = {

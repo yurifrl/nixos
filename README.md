@@ -1,6 +1,9 @@
 # Nixos image
 
 
+journalctl -u tailscale-autoconnect -f
+sudo systemctl restart  tailscale-autoconnect
+
 journalctl -u tailscaled.service -f
 sudo systemctl restart  tailscaled.service
 

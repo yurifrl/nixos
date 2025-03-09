@@ -5,6 +5,13 @@
     tailscale
   ];
 
+  # Fix permission issues with the tailscale auth key
+  system.activationScripts.tailscalePerms = ''
+    mkdir -p /etc/tailscale
+    chmod 755 /etc/tailscale
+    chmod 600 /etc/tailscale/tailscale-auth.key || true
+  '';
+
   # Tailscale service configuration
   services.tailscale = {
     enable = true;
@@ -18,14 +25,11 @@
     after = [
       "network-pre.target"
       "tailscale.service" 
-      "secret-loader.service"
     ];
     wants = [
       "network-pre.target"
       "tailscale.service" 
-      "secret-loader.service"
     ];
-    requires = [ "secret-loader.service" ]; # Make it a hard requirement
     wantedBy = [ "multi-user.target" ];
 
     # set this service as a oneshot job

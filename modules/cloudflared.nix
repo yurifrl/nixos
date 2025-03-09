@@ -2,6 +2,13 @@
 { config, lib, pkgs, ... }:
 
 {
+  # Fix permission issues with the config file
+  system.activationScripts.cloudflaredPerms = ''
+    mkdir -p /etc/cloudflared
+    chmod 755 /etc/cloudflared
+    chmod 644 /etc/cloudflared/config.json || true
+  '';
+
   services.cloudflared = {
     enable = true;
     tunnels = {
