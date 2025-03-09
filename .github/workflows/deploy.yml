@@ -45,5 +45,14 @@ jobs:
           
       - name: Run deployment
         run: |
+          # Debug output
+          echo "Current DROPLET_IP value: $DROPLET_IP"
+          
+          # Export the variable to make sure it's available in the environment
+          export DROPLET_IP="$DROPLET_IP"
+          
+          # Verify the export
           echo "Deploying to $DROPLET_IP"
-          DROPLET_IP="$DROPLET_IP" deploy .#
+          
+          # Run deploy with --trace for more detailed output
+          deploy .# --trace
