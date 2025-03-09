@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - '*'  # Triggers on any tag push
-  push:
   pull_request:
   workflow_dispatch:  # Keeping manual trigger capability
 
@@ -18,23 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-      
-      - name: Enable Nix Flakes
+      # Create a test file instead of building NixOS
+      - name: Create test file
         run: |
-          mkdir -p ~/.config/nix
-          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
-
-      - name: Build NixOS Image
-        run: nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
+          echo "This is a test file for NixOS image $(date)" > test.qcow2
+          # Create a compressed version
+          bzip2 -c test.qcow2 > test.qcow2.bz2
 
       - name: Upload Image Artifact
         id: upload-artifact
         uses: actions/upload-artifact@v4
         with:
           name: nixos-digital-ocean-image
-          path: result/nixos.qcow2.bz2
+          path: test.qcow2.bz2
           retention-days: 5
 
       - name: Install doctl
@@ -68,11 +63,11 @@ jobs:
       - name: Upload to GCS and create image
         run: |
           # Decompress the image
-          bunzip2 result/nixos.qcow2.bz2
+          bunzip2 test.qcow2.bz2
           
           # Upload to GCS with public access
-          OBJECT_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2"
-          gsutil cp result/nixos.qcow2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
+          OBJECT_NAME="nixos-test-$(date +%Y%m%d-%H%M%S).qcow2"
+          gsutil cp test.qcow2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           
           # Get the public URL
@@ -81,10 +76,10 @@ jobs:
 
       - name: Create DigitalOcean Image
         run: |
-          doctl compute image create nix-image \
+          doctl compute image create nix-image-test \
             --region nyc1 \
             --image-url "${{ env.IMAGE_URL }}" \
-            --image-description "Custom NixOS image built on $(date +%Y-%m-%d)"
+            --image-description "Test image created on $(date +%Y-%m-%d)"
 
       - name: Get Artifact Information
         run: |
