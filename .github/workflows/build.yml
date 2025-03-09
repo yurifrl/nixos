@@ -14,8 +14,6 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
-    env:
-      GCS_BUCKET: ${{ secrets.GCS_BUCKET_NAME }}
 
     steps:
       - uses: actions/checkout@v4
