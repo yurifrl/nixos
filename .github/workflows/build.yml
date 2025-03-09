@@ -27,7 +27,13 @@ jobs:
           echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
       - name: Build NixOS Image
-        run: nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
+        run: |
+          nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
+          echo "================================================"  
+          ls -la result/
+          echo "================================================"  
+          ls -la result/nixos*
+          echo "================================================"  
 
       - name: Google Auth
         id: auth
@@ -43,12 +49,24 @@ jobs:
 
       - name: Upload to GCS and create image
         run: |
+          echo "Listing workspace contents:"
+          ls -la
+          echo "================================================"
+          echo "Listing result directory contents:"
+          ls -la result/
+          echo "================================================"
+          
           # Find the generated qcow2.bz2 file
-          GENERATED_FILE=$(find result -name "*.qcow2.bz2")
+          GENERATED_FILE=$(find result -type l -name "nixos-image-digital-ocean-*.qcow2.bz2")
+          
           if [ -z "$GENERATED_FILE" ]; then
-            echo "Error: No qcow2.bz2 file found in result directory"
+            echo "Error: No nixos image file found in result directory"
+            echo "Contents of result directory:"
+            ls -R result/
             exit 1
           fi
+          
+          echo "Found image file: $GENERATED_FILE"
           
           # Upload to GCS with public access
           OBJECT_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"

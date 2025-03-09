@@ -12,14 +12,25 @@ tasks:
   build:
     desc: Build the NixOS image
     cmds:
-      - nix build ${BUILD} --system x86_64-linux
+      - nix build {{.BUILD}} --system x86_64-linux
 
   cache:
     desc: Cache build products and dependencies
     cmds:
-      - DERIVATION=$(nix path-info --derivation ${BUILD})
+      - DERIVATION=$(nix path-info --derivation {{.BUILD}})
       - mapfile -t DEPENDENCIES < <(nix-store --query --requisites --include-outputs "${DERIVATION}")
-      - printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "${CACHE}"
+      # - printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "{{.CACHE}}"
+
+# $ echo "${BUILDS[@]}" | xargs nix build
+
+# $ mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
+
+# $ mapfile -t DEPENDENCIES < <(echo "${DERIVATIONS[@]}" | xargs nix-store --query --requisites --include-outputs)
+
+# $ echo "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "${KEY_FILE}" --recursive
+
+# $ echo "${DEPENDENCIES[@]}" | xargs nix copy --to "${CACHE}"
+
 
   upload:
     cmds:
