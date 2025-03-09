@@ -15,27 +15,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # Create a test file instead of building NixOS
-      - name: Create test file
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+      
+      - name: Enable Nix Flakes
         run: |
-          echo "This is a test file for NixOS image $(date)" > test.qcow2
-          # Create a compressed version
-          bzip2 -c test.qcow2 > test.qcow2.bz2
+          mkdir -p ~/.config/nix
+          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
-      - name: Upload Image Artifact
-        id: upload-artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nixos-digital-ocean-image
-          path: test.qcow2.bz2
-          retention-days: 5
+      - name: Build NixOS Image
+        run: nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      # Set up Google Cloud authentication using Workload Identity Federation
       - name: Google Auth
         id: auth
         uses: google-github-actions/auth@v1
@@ -48,60 +38,34 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      # Verify Google Cloud authentication
-      - name: Verify Google Cloud Auth
-        run: |
-          echo "Verifying Google Cloud authentication..."
-          gcloud auth list
-          gcloud config list project
-          echo "Testing bucket access..."
-          gsutil ls gs://${{ secrets.GCS_BUCKET_NAME }} || echo "Note: Bucket might not exist yet"
-
-      # Upload to Google Cloud Storage
       - name: Upload to GCS and create image
         run: |
-          # Clean up any existing files
-          rm -f test.qcow2
-
-          # Decompress the image with force overwrite
-          bunzip2 -f test.qcow2.bz2 || {
-            echo "Failed to decompress file"
-            exit 1
-          }
-          
-          # Verify file exists
-          if [ ! -f test.qcow2 ]; then
-            echo "Decompressed file not found"
-            exit 1
-          fi
-          
           # Upload to GCS with public access
-          OBJECT_NAME="nixos-test-$(date +%Y%m%d-%H%M%S).qcow2"
-          gsutil cp test.qcow2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME || {
-            echo "Failed to upload to GCS"
-            exit 1
-          }
+          OBJECT_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
+          gsutil cp result/nixos.qcow2.bz2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           
-          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME || {
-            echo "Failed to make object public"
-            exit 1
-          }
+          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
           
           # Get the public URL
           IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME"
+          echo "::add-mask::$IMAGE_URL"
           echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
 
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+  
       - name: Create DigitalOcean Image
         run: |
-          doctl compute image create nix-image-test \
+          doctl compute image create nix-image \
             --region nyc1 \
             --image-url "${{ env.IMAGE_URL }}" \
-            --image-description "Test image created on $(date +%Y-%m-%d)"
+            --image-description "NixOS image built on $(date +%Y-%m-%d)"
 
       - name: Get Artifact Information
         run: |
-          echo "Artifact was uploaded successfully!"
-          echo "You can find the artifact in the Actions tab of this repository"
-          echo "Direct link to workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "✓ Process completed successfully"
+          echo "→ Custom image will be available at: https://cloud.digitalocean.com/images/custom_images"
 
           
