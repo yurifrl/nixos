@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base"
+  ],
+  "nix": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackagePatterns": ["gatus"],
+      "automerge": false,
+      "labels": ["dependency", "gatus"]
+    }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": ["^packages/gatus/default\\.nix$"],
+      "matchStrings": [
+        "version = \"(?<currentValue>[0-9.]+)\";"
+      ],
+      "depNameTemplate": "TwiN/gatus",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ]
+} 

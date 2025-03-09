@@ -10,4 +10,7 @@
   cowsay-version = pkgs.callPackage ./cowsay-version {
     inherit (pkgs) writeShellScriptBin cowsay;
   };
+  
+  # Gatus - Developer-oriented status page
+  gatus = pkgs.callPackage ./gatus {};
 } 

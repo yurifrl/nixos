@@ -2,7 +2,7 @@
 
 
 journalctl -u tailscale-autoconnect -f
-sudo systemctl restart  tailscale-autoconnect
+sudo systemctl start  tailscale-autoconnect
 
 journalctl -u tailscaled.service -f
 sudo systemctl restart  tailscaled.service

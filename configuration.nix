@@ -7,6 +7,7 @@
     ./modules/ssh.nix
     ./modules/cloudflared.nix
     ./modules/tailscale.nix
+    ./modules/gatus
     ./users/root.nix
   ];
 

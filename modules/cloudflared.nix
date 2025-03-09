@@ -16,7 +16,7 @@
         # credentialsFile = "${config.sops.secrets.cloudflared-creds.path}";
         credentialsFile = "/etc/cloudflared/config.json";
         ingress = {
-          "up2.syscd.live" = "http://localhost:80";
+          "up2.syscd.live" = "http://localhost:8080";
         };
         default = "http_status:404";
       };
