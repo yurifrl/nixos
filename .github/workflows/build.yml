@@ -60,13 +60,32 @@ jobs:
       # Upload to Google Cloud Storage
       - name: Upload to GCS and create image
         run: |
-          # Decompress the image
-          bunzip2 test.qcow2.bz2
+          # Clean up any existing files
+          rm -f test.qcow2
+
+          # Decompress the image with force overwrite
+          bunzip2 -f test.qcow2.bz2 || {
+            echo "Failed to decompress file"
+            exit 1
+          }
+          
+          # Verify file exists
+          if [ ! -f test.qcow2 ]; then
+            echo "Decompressed file not found"
+            exit 1
+          fi
           
           # Upload to GCS with public access
           OBJECT_NAME="nixos-test-$(date +%Y%m%d-%H%M%S).qcow2"
-          gsutil cp test.qcow2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
-          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME
+          gsutil cp test.qcow2 gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME || {
+            echo "Failed to upload to GCS"
+            exit 1
+          }
+          
+          gsutil acl ch -u AllUsers:R gs://${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME || {
+            echo "Failed to make object public"
+            exit 1
+          }
           
           # Get the public URL
           IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$OBJECT_NAME"
