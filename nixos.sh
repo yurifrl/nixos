@@ -7,7 +7,12 @@ KEY_FILE="/root/.ssh/cache-priv-key.pem"
 TRUSTED_KEY="$(cat /root/.ssh/cache-pub-key.pem)"
 
 nix build --option substituters "${https://github.com/nix-community/cache-nix-action}" \
-   --option trusted-public-keys "cache-key-1:${TRUSTED_KEY}" "${BUILDS[@]}"
+   --option trusted-public-keys "cache-key-1:${TRUSTED_KEY}" "${BUILDS[@]}" --system x86_64-linux
+
+nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage \
+    --system x86_64-linux \
+    --option substituters \
+    --option trusted-public-keys "cache-key-1:${TRUSTED_KEY}"
 
 # echo "${BUILDS[@]}" | xargs nix build
 

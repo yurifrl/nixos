@@ -13,7 +13,7 @@ tasks:
   build:
     desc: Build the NixOS image
     cmds:
-      - nix build {{.BUILD}} --system x86_64-linux
+      - nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage --system x86_64-linux
 
   cache:
     desc: Cache build products and dependencies
