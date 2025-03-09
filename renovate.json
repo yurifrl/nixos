@@ -6,6 +6,9 @@
   "nix": {
     "enabled": true
   },
+  "ignorePaths": [
+    ".old/**"
+  ],
   "packageRules": [
     {
       "matchDatasources": ["github-releases"],
