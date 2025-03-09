@@ -26,4 +26,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./modules/gatus/config.yaml:/etc/gatus/config.yaml
+      - ./modules/gatus/config.yaml:/config/config.yaml
+    env_file:
+      - ./secrets/gatus.env
+    environment:
+      GATUS_LOG_LEVEL: DEBUG

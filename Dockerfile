@@ -33,11 +33,10 @@ RUN nix-store --generate-binary-cache-key cache-key-1 /root/.ssh/cache-priv-key.
     chmod 644 /root/.ssh/cache-pub-key.pem
 
 ENV NIX_CACHE="file:///nix-cache"
-ENV TRUSTED_KEY="cache-key-1:$(cat /root/.ssh/cache-pub-key.pem)"
 
 RUN echo "system-features = kvm" >> /etc/nix/nix.conf
 RUN echo "extra-substituters = ${NIX_CACHE}" >> /etc/nix/nix.conf
-RUN echo "extra-trusted-public-keys = cache-key-1:${TRUSTED_KEY}" >> /etc/nix/nix.conf
+RUN echo "extra-trusted-public-keys = cache-key-1:$(cat /root/.ssh/cache-pub-key.pem)" >> /etc/nix/nix.conf
 
 
 WORKDIR /workdir

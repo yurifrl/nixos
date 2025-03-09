@@ -1,27 +1,133 @@
-web:
-  port: 8080
-
 endpoints:
-  - name: Example
-    group: Default
-    url: https://example.org
-    interval: 30s
+  - name: ArgoCD
+    group: Live
+    url: https://argocd.syscd.live
+    interval: 10s
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 500"
-  
-  - name: Google
-    group: Default
-    url: https://google.com
-    interval: 30s
+      - "[BODY] == pat(*<title>Argo CD</title>*)"
+    headers:
+      "CF-Access-Client-Id": "$CF_ACCESS_CLIENT_ID"
+      "CF-Access-Client-Secret": "$CF_ACCESS_CLIENT_SECRET"
+    alerts:
+      - type: discord
+      
+  - name: Alertmanager
+    group: Tech
+    url: https://alertmanager.syscd.tech/-/healthy
+    interval: 10s
     conditions:
       - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 1000"
-  
-  - name: NixOS
-    group: Default
-    url: https://nixos.org
-    interval: 30s
+      - "[RESPONSE_TIME] < 500"
+      - "[BODY] == OK"
+    alerts:
+      - type: discord
+
+  - name: Home Assistant
+    group: Tech
+    url: https://ha.syscd.tech
+    # url: https://ha.syscd.tech/manifest.json
+    interval: 10s
     conditions:
       - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 1000"
+      - "[RESPONSE_TIME] < 500"
+      - "[BODY] == pat(*<title>Home Assistant</title>*)"
+    alerts:
+      - type: discord
+
+  - name: Prometheus
+    group: Tech
+    url: https://prometheus.syscd.tech/-/healthy
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+      - "[BODY] == Prometheus Server is Healthy."
+    alerts:
+      - type: discord
+
+  - name: zigbee2mqtt
+    group: Tech
+    url: https://zigbee2mqtt.syscd.tech
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+      - "[BODY] == pat(*<title>Zigbee2MQTT</title>*)"
+    alerts:
+      - type: discord
+
+  # Xyz
+  - name: Teleport
+    group: Xyz
+    url: https://syscd.xyz/webapi/ping
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+      - "[BODY].proxy.kube.enabled == true"
+    alerts:
+      - type: discord
+
+  # Httpbin
+  - name: Httpbin Cloudflare NO Token
+    group: Httpbin
+    url: https://httpbin.syscd.live/status/200
+    interval: 10s
+    conditions:
+      - "[STATUS] == 302"
+      - "[RESPONSE_TIME] < 500"
+    alerts:
+      - type: discord
+    client:
+      ignore-redirect: true # Need this otherwise cloudflare will redirect to the login page and that's a 200
+
+  - name: Httpbin Cloudflare With Token
+    group: Httpbin
+    url: https://httpbin.syscd.live/status/200
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+    headers:
+      "CF-Access-Client-Id": "$CF_ACCESS_CLIENT_ID"
+      "CF-Access-Client-Secret": "$CF_ACCESS_CLIENT_SECRET"
+    alerts:
+      - type: discord
+
+  - name: Httpbin Via Tailscale
+    group: Httpbin
+    url: https://httpbin.syscd.tech/status/200
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 500"
+    alerts:
+      - type: discord
+
+  - name: Httpbin Via bind9
+    group: Httpbin
+    url: https://httpbin.syscd.dev/status/200
+    client:
+      dns-resolver: "tcp://192.168.68.200:53"
+    conditions:
+      - "[STATUS] == 200"
+    # alerts:
+    #   - type: discord
+
+web:
+  port: 8080
+  title: "Syscd Status Dashboard"
+
+alerting:
+  discord:
+    webhook-url: "$DISCORD_WEBHOOK_URL"
+    default-alert:
+      send-on-resolved: true
+      failure-threshold: 3
+      success-threshold: 2
+
+storage:
+  type: sqlite
+  path: data.db
