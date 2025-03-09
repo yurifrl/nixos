@@ -15,7 +15,7 @@ jobs:
       contents: 'read'
       id-token: 'write'
     env:
-      NIXOS_IMAGE_NAME: "nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
+      GCS_BUCKET: ${{ secrets.GCS_BUCKET_NAME }}
 
     steps:
       - uses: actions/checkout@v4
@@ -52,8 +52,18 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: Configure gsutil
+        run: |
+          # Create .boto configuration file
+          echo "[GSUtil]
+          parallel_composite_upload_threshold = 150M" > ~/.boto
+
       - name: Upload to GCS and create image
         run: |
+          # Generate image name with timestamp
+          NIXOS_IMAGE_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
+          echo "NIXOS_IMAGE_NAME=$NIXOS_IMAGE_NAME" >> $GITHUB_ENV
+          
           # Copy the qcow2.bz2 file with a simple name
           cp result/*qcow2.bz2 nixos.qcow2.bz2
           
