@@ -1,5 +1,5 @@
 # Hardware-specific configuration for DigitalOcean
-{ config, lib, pkgs, modulesPath, ... }:
+{ config, lib, pkgs, modulesPath, inputs, ... }:
 
 {
   imports = [ 
@@ -18,7 +18,7 @@
   }];
 
   # Store nixpkgs in /etc/nixpkgs
-  environment.etc.nixpkgs.source = nixpkgs;
+  environment.etc.nixpkgs.source = inputs.nixpkgs;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
