@@ -6,14 +6,7 @@
   };
 
   # Define the system configuration
-  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: let
-    # Get the droplet IP with better error handling
-    dropletIp = let
-      ip = builtins.getEnv "DROPLET_IP";
-    in if ip == "" then
-      throw "ERROR: DROPLET_IP environment variable is not set! Please set it before deploying."
-    else ip;
-  in {
+  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: {
     packages.x86_64-linux = import ./packages { 
       pkgs = nixpkgs.legacyPackages.x86_64-linux; 
     };
