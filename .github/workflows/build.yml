@@ -2,12 +2,9 @@ name: "Build NixOS Image"
 
 on:
   push:
-    tags:
-      - '*'  # Triggers on any tag push
   pull_request:
   workflow_dispatch:  # Keeping manual trigger capability
-  push:
-  
+
 jobs:
   build:
     runs-on: ubuntu-latest
