@@ -104,19 +104,4 @@ jobs:
           echo "You can find the artifact in the Actions tab of this repository"
           echo "Direct link to workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-      # Set the correct project
-      - name: Set project
-        run: gcloud config set project syscd-443112
-
-      # Enable the IAM API
-      - name: Enable IAM API
-        run: gcloud services enable iam.googleapis.com
-
-      # Create the Workload Identity Pool
-      - name: Create Workload Identity Pool
-        run: gcloud iam workload-identity-pools create "github-pool" \
-            --project="syscd-443112" \
-            --location="global" \
-            --display-name="GitHub Actions Pool"
-
           
