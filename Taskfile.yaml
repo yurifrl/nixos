@@ -75,3 +75,25 @@ tasks:
         git push origin "v$NEW_VERSION"
         git push origin main
 
+
+  generate-deploy-keys:
+    desc: Generate new SSH keys for deployment
+    cmds:
+      - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
+      - |
+        echo "✨ Keys generated successfully!"
+        echo ""
+        echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
+        echo "----------------------------------------"
+        cat deploy-key
+        echo "----------------------------------------"
+        echo ""
+        echo "🔐 Public Key (add to NixOS config users/root.nix):"
+        echo "----------------------------------------"
+        cat deploy-key.pub
+        echo "----------------------------------------"
+        echo ""
+        echo "🌐 Known Hosts (add to GitHub secret DEPLOY_KNOWN_HOSTS):"
+        echo "----------------------------------------"
+        ssh-keyscan -t ed25519 $DROPLET_IP
+        echo "----------------------------------------"
