@@ -97,7 +97,7 @@ jobs:
         run: |
           doctl compute image create "$NIXOS_IMAGE_NAME" \
             --region nyc1 \
-            --image-url "${{ env.IMAGE_URL }}" \
+            --image-url "$IMAGE_URL" \
             --image-description "NixOS image built on $(date +%Y-%m-%d)"
 
       - name: Get Artifact Information
