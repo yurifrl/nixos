@@ -1,4 +1,4 @@
-name: "Deploy NixOS Configuration"
+name: "🚢 Deploy NixOS Configuration"
 
 on:
   push:
@@ -12,6 +12,8 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+    env:
+      DROPLET_IP: "${{ secrets.DROPLET_IP }}"
 
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +29,7 @@ jobs:
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@v6
         with:
-          primary-key: ${{ runner.os }}-nix-${{ hashFiles('**/*.nix') }}
+          primary-key: "${{ runner.os }}-nix-${{ hashFiles('**/*.nix') }}"
           paths: |
             /nix/store
             /nix-cache
@@ -38,8 +40,8 @@ jobs:
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          known_hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          key: "${{ secrets.DEPLOY_SSH_KEY }}"
+          known_hosts: "${{ secrets.DEPLOY_KNOWN_HOSTS }}"
           
       - name: Run deployment
         run: deploy .#

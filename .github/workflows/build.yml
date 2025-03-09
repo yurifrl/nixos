@@ -1,4 +1,4 @@
-name: "Build NixOS Image"
+name: "🏗️ Build NixOS Image"
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - '*'
     branches:
       - main
-  workflow_dispatch:  # Keeping manual trigger capability
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,7 +29,7 @@ jobs:
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@v6
         with:
-          primary-key: ${{ runner.os }}-nix-${{ hashFiles('**/*.nix') }}
+          primary-key: "${{ runner.os }}-nix-${{ hashFiles('**/*.nix') }}"
           paths: |
             /nix/store
             /nix-cache
@@ -42,13 +42,13 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v1
         with:
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER }}"
+          service_account: "${{ secrets.WIF_SERVICE_ACCOUNT }}"
 
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          project_id: "${{ secrets.GCP_PROJECT_ID }}"
 
       - name: Configure gsutil
         run: |
@@ -93,7 +93,7 @@ jobs:
       - name: Install doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          token: "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
   
       - name: Create DigitalOcean Image
         run: |
