@@ -11,3 +11,7 @@ id_ed25519
 *.env
 1password-credentials.json
 builds
+*.pem
+*.key
+deploy-key
+deploy-key**
