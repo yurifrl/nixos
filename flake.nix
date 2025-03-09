@@ -6,7 +6,14 @@
   };
 
   # Define the system configuration
-  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: {
+  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: let
+    # Get the droplet IP with better error handling
+    dropletIp = let
+      ip = builtins.getEnv "DROPLET_IP";
+    in if ip == "" then
+      throw "ERROR: DROPLET_IP environment variable is not set! Please set it before deploying."
+    else ip;
+  in {
     packages.x86_64-linux = import ./packages { 
       pkgs = nixpkgs.legacyPackages.x86_64-linux; 
     };
@@ -42,17 +49,19 @@
         }).config.system.build.digitalOceanImage;
     };
 
-    deploy = let
-      dropletIp = builtins.getEnv "DROPLET_IP";
-      defaultIp = "127.0.0.1"; # Fallback IP, you can change this
-    in {
+    deploy = {
       nodes = {
         digitalOcean = {
-          hostname = if dropletIp != "" then dropletIp else defaultIp;
+          hostname = dropletIp;
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";
             remoteBuild = true;
+            # Add SSH options for more verbose output during deployment
+            sshOpts = [
+              "-o" "StrictHostKeyChecking=yes"
+              "-v"
+            ];
           };
         };
       };
