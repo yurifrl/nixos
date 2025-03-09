@@ -42,10 +42,13 @@
         }).config.system.build.digitalOceanImage;
     };
 
-    deploy = {
+    deploy = let
+      dropletIp = builtins.getEnv "DROPLET_IP";
+      defaultIp = "127.0.0.1"; # Fallback IP, you can change this
+    in {
       nodes = {
         digitalOcean = {
-          hostname = builtins.getEnv "DROPLET_IP";
+          hostname = if dropletIp != "" then dropletIp else defaultIp;
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";

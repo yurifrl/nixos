@@ -44,4 +44,6 @@ jobs:
           known_hosts: "${{ secrets.DEPLOY_KNOWN_HOSTS }}"
           
       - name: Run deployment
-        run: deploy .#
+        run: |
+          echo "Deploying to $DROPLET_IP"
+          DROPLET_IP="$DROPLET_IP" deploy .#
