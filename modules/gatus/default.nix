@@ -11,9 +11,7 @@
   
   # Ensure the package is installed
   environment.systemPackages = [ pkgs.gatus ];
-
-  # Don't restart during deployment
-  restartIfChanged = false;
+  
   # Define the Gatus service
   systemd.services.gatus = {
     description = "Gatus";
@@ -33,5 +31,8 @@
     environment = {
       GATUS_CONFIG_PATH = ./config.yaml;
     };
+    
+    # This is the key line that prevents deployment failures
+    stopIfChanged = false;
   };
 } 
