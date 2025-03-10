@@ -28,8 +28,8 @@
       # EnvironmentFile = "/etc/gatus/gatus.env";
     };
     
-    environment = {
-      GATUS_CONFIG_PATH = ./config.yaml;
-    };
+    # environment = {
+    #   # GATUS_CONFIG_PATH = ./config.yaml;
+    # };
   };
 } 
