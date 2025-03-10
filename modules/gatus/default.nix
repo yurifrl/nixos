@@ -1,5 +1,11 @@
 { config, pkgs, ... }:
 {
+  system.activationScripts.gatusPerms = ''
+    mkdir -p /etc/gatus
+    chmod 755 /etc/gatus
+    chmod 600 /etc/gatus/gatus.env || true
+  '';
+
   # Fixed user/group
   users.users.gatus = {
     isSystemUser = true;
