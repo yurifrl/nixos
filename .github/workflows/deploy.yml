@@ -27,7 +27,7 @@ jobs:
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@v6
         with:
-          primary-key: "${{ runner.os }}-nix"
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
           paths: |
             /nix/store
             /nix-cache
