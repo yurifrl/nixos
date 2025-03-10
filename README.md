@@ -1,6 +1,9 @@
 # Nixos image
 
 
+journalctl -u gatus.service -f
+sudo systemctl restart  gatus.service
+
 journalctl -u tailscale-autoconnect -f
 sudo systemctl start  tailscale-autoconnect
 
