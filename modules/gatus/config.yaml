@@ -128,6 +128,6 @@ alerting:
       failure-threshold: 3
       success-threshold: 2
 
-storage:
-  type: sqlite
-  path: data.db
+# storage:
+#   type: sqlite
+#   path: data.db
