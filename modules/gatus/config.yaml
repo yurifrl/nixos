@@ -120,6 +120,11 @@ web:
   port: 8080
   title: "Syscd Status Dashboard"
 
+maintenance:
+  - start: 00:00
+    duration: 8h
+    timezone: "America/Sao_Paulo"
+
 alerting:
   discord:
     webhook-url: "$DISCORD_WEBHOOK_URL"
