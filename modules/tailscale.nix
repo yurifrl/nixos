@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, ... }:
 {
   environment.systemPackages = with pkgs; [
     jq
@@ -17,23 +17,6 @@
     package = pkgs.tailscale;
   };
 
-  # Configure firewall for Tailscale
-  networking.firewall = {
-    # If firewall is enabled, ensure Tailscale traffic is allowed
-    trustedInterfaces = [ "tailscale0" ];
-    
-    # Allow the Tailscale UDP port through the firewall
-    allowedUDPPorts = [ 
-      config.services.tailscale.port 
-      3478  # Tailscale needs this port for STUN
-    ];
-    
-    # Important: Allow established connections
-    allowedUDPPortRanges = [
-      { from = 1024; to = 65535; }
-    ];
-  };
-
   systemd.services.tailscale-autoconnect = {
     description = "Automatic connection to Tailscale";
 
@@ -41,27 +24,19 @@
     after = [
       "network-pre.target"
       "tailscale.service" 
-      "network-online.target"  # Ensure network is fully online
     ];
     wants = [
       "network-pre.target"
       "tailscale.service" 
-      "network-online.target"  # Ensure network is fully online
     ];
     wantedBy = [ "multi-user.target" ];
 
-    # set this service as a oneshot job
-    serviceConfig = {
-      Type = "oneshot";
-      # Add restart strategy for more reliability
-      Restart = "on-failure";
-      RestartSec = "5s";
-    };
+    serviceConfig.Type = "oneshot";
 
     # have the job run this shell script
     script = with pkgs; ''
-      # wait for tailscaled to settle - increase for cloud environments
-      sleep 5
+      # wait for tailscaled to settle
+      sleep 2
 
       # check if we are already authenticated to tailscale
       status="$(${tailscale}/bin/tailscale status -json | ${jq}/bin/jq -r .BackendState)"
@@ -70,7 +45,6 @@
       fi
 
       # otherwise authenticate with tailscale and accept DNS
-      # Add --accept-dns flag to ensure proper DNS resolution in cloud
       ${tailscale}/bin/tailscale up -authkey $(cat /etc/tailscale/tailscale-auth.key) --accept-dns
     '';
   };
