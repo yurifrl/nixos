@@ -25,7 +25,7 @@
       Restart = "on-failure";
       # Required environment variables
       # CF_ACCESS_CLIENT_ID, CF_ACCESS_CLIENT_SECRET, DISCORD_WEBHOOK_URL
-      EnvironmentFile = "/etc/gatus/gatus.env";
+      # EnvironmentFile = "/etc/gatus/gatus.env";
     };
     
     environment = {
