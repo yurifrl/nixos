@@ -22,7 +22,7 @@
     stopIfChanged = false;
     
     # Don't restart during deployment
-    restartIfChanged = false;
+    restartIfChanged = true;
     
     serviceConfig = {
       User = "gatus";
