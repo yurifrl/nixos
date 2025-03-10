@@ -44,7 +44,7 @@
     deploy = {
       nodes = {
         digitalOcean = {
-          hostname = "45.55.248.197";
+          hostname = "nixos";
           # hostname = builtins.getEnv "DROPLET_IP";
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
