@@ -15,6 +15,7 @@
   services.tailscale = {
     enable = true;
     package = pkgs.tailscale;
+    useRoutingFeatures = "both"; # Enable Tailscale subnet routing
   };
 
   systemd.services.tailscale-autoconnect = {
@@ -45,7 +46,7 @@
       fi
 
       # otherwise authenticate with tailscale and accept DNS
-      ${tailscale}/bin/tailscale up -authkey $(cat /etc/tailscale/tailscale-auth.key) --accept-dns
+      ${tailscale}/bin/tailscale up -authkey $(cat /etc/tailscale/tailscale-auth.key) --accept-dns  --accept-routes
     '';
   };
 
