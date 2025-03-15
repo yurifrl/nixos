@@ -47,6 +47,7 @@ tasks:
     cmds:
       - ssh-keyscan -t ed25519 "{{.TAILSCALE_HOST}}" || true
       - ssh-keyscan -t ed25519 "{{.DROPLET_IP}}" || true
+      - echo "add here https://github.com/yurifrl/nixos/settings/secrets/actions to DEPLOY_KNOWN_HOSTS"
 
   generate-deploy-keys:
     desc: Generate new SSH keys for deployment
@@ -76,6 +77,8 @@ tasks:
         echo "----------------------------------------"
         echo ""
         echo "All files saved in the ./secrets directory"
+        echo "add here https://github.com/yurifrl/nixos/settings/secrets/actions to DEPLOY_SSH_KEY"
+
 
   load-secrets:
     desc: Load secrets from the ./secrets directory
