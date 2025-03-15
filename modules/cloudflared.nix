@@ -15,7 +15,7 @@
       "3b90d790-0a11-46ae-9421-d195cc828947" = {
         credentialsFile = "/etc/cloudflared/config.json";
         ingress = {
-          "up.syscd.live" = "http://localhost";
+          "up.syscd.live" = "http://localhost:8080";
         };
         default = "http_status:404";
       };

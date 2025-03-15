@@ -117,7 +117,7 @@ endpoints:
     #   - type: discord
 
 web:
-  port: 80
+  port: 8080
   title: "Syscd Status Dashboard"
 
 alerting:
