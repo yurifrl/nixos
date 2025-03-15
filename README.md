@@ -13,6 +13,11 @@ sudo systemctl restart  tailscaled.service
 journalctl -u cloudflared-tunnel-5ce2f91a-f98f-49d1-a966-5c0742f2bddc.service -f
 sudo systemctl restart  cloudflared-tunnel-5ce2f91a-f98f-49d1-a966-5c0742f2bddc.service
 
+Trobleshooting
+```bash
+nix-env -iA nixos.dnsutils nixos.inetutils
+```
+
 ## Digital Ocean Nixos Image
 - [Deploying NixOS with flakes on Digital Ocean — lelgenio](https://blog.lelgenio.com/deploying-nixos-with-flakes-on-digital-ocean)
 - [NixOS in the Cloud, step-by-step: part 1 · Justinas Stankevičius](https://justinas.org/nixos-in-the-cloud-step-by-step-part-1)
