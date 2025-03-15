@@ -78,7 +78,7 @@ tasks:
 
   generate-deploy-keys:
     desc: Generate new SSH keys for deployment
-    dir: ./secrets
+    dir: ./secrets/deploy-key
     cmds:
       - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
       - |
