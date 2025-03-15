@@ -2,11 +2,6 @@ version: "3"
 
 dotenv: [.env]
 
-vars:
-  BUILD: .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
-  CACHE: /nix-cache
-  NIX_SECRET_KEY_FILE: "~/.ssh/cache-priv-key.pem"
-
 tasks:
   load-envs:
     desc: Load environment variables
@@ -21,22 +16,7 @@ tasks:
   cache:
     desc: Cache build products and dependencies
     cmds:
-      - |
-        DERIVATION=$(nix path-info --derivation {{.BUILD}})
-        mapfile -t DEPENDENCIES < <(nix-store --query --requisites --include-outputs "${DERIVATION}")
-        mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
-
-        # Sign the dependencies
-        printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "~/.ssh/cache-priv-key.pem" --recursive
-        
-        # Copy to cache
-        printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "/nix-cache"
-
-        # $ echo "${BUILDS[@]}" | xargs nix build
-        # $ mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
-        # $ mapfile -t DEPENDENCIES < <(echo "${DERIVATIONS[@]}" | xargs nix-store --query --requisites --include-outputs)
-        # $ echo "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "${KEY_FILE}" --recursive
-        # $ echo "${DEPENDENCIES[@]}" | xargs nix copy --to "${CACHE}"
+      - ./hack/cache.sh
 
   upload:
     cmds:
