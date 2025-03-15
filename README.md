@@ -26,3 +26,17 @@ nix-env -iA nixos.dnsutils nixos.inetutils tcpdump
 - [Jean-Charles Quillet - Deploying a static website with nix](https://jeancharles.quillet.org/posts/2023-08-01-Deploying-a-static-website-with-nix.html)
 - [Deploying to DigitalOcean · nixos · Zulip Chat Archive](https://chat.nixos.asia/stream/413948-nixos/topic/Deploying.20to.20DigitalOcean.html)
 
+
+# Setup new machine
+
+- Create a tag and push it, `.github/workflows/build.yml` will build a new custom digital ocean image
+- Use the newly created image to deploy a new machine
+- Machine should be running
+- Get the ip address of the machine and change it in `flake.nix` and in 1password
+- run `task load-envs` to generate .env with credentials you need locally
+- Run `task load-secrets` to send secrets to the machine
+- machine should have secrets now
+- Add the machine ip to `flake.nix`
+- Make a deploy or run `docker compose up --rm deploy` to start the secrets
+- You may remove the IP from `flake.nix` and use the `1password` hostname there
+- To the pipeline to work, it need the know host,  you cant initialy add tailscale there because tailscale is not running in the begining

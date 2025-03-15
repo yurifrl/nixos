@@ -1,14 +1,17 @@
 version: "3"
 
+dotenv: [.env]
+
 vars:
   BUILD: .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
   CACHE: /nix-cache
   NIX_SECRET_KEY_FILE: "~/.ssh/cache-priv-key.pem"
+
 tasks:
-  deploy:
-    desc: Deploy the NixOS image
+  load-envs:
+    desc: Load environment variables
     cmds:
-      - deploy
+      - op inject -i .env.op -o .env
 
   build:
     desc: Build the NixOS image
@@ -22,7 +25,6 @@ tasks:
         DERIVATION=$(nix path-info --derivation {{.BUILD}})
         mapfile -t DEPENDENCIES < <(nix-store --query --requisites --include-outputs "${DERIVATION}")
         mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
-        
 
         # Sign the dependencies
         printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "~/.ssh/cache-priv-key.pem" --recursive
@@ -30,61 +32,32 @@ tasks:
         # Copy to cache
         printf '%s\n' "${DEPENDENCIES[@]}" | xargs nix copy --to "/nix-cache"
 
-# $ echo "${BUILDS[@]}" | xargs nix build
-
-# $ mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
-
-# $ mapfile -t DEPENDENCIES < <(echo "${DERIVATIONS[@]}" | xargs nix-store --query --requisites --include-outputs)
-
-# $ echo "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "${KEY_FILE}" --recursive
-
-# $ echo "${DEPENDENCIES[@]}" | xargs nix copy --to "${CACHE}"
-
+        # $ echo "${BUILDS[@]}" | xargs nix build
+        # $ mapfile -t DERIVATIONS < <(echo "${BUILDS[@]}" | xargs nix path-info --derivation)
+        # $ mapfile -t DEPENDENCIES < <(echo "${DERIVATIONS[@]}" | xargs nix-store --query --requisites --include-outputs)
+        # $ echo "${DEPENDENCIES[@]}" | xargs nix store sign --key-file "${KEY_FILE}" --recursive
+        # $ echo "${DEPENDENCIES[@]}" | xargs nix copy --to "${CACHE}"
 
   upload:
     cmds:
       - doctl compute image create nix-image --region nyc1 --image-url "https://github.com/yurifrl/nixos/actions/runs/13526601851/artifacts/2650149472" --image-description "Custom nix image"
 
-  tag:
-    desc: Create and push a new version tag
+  generate-known-hosts:
+    desc: Generate known hosts file
     cmds:
-      - |
-        VERSION=$(cat VERSION)
-        IFS='.' read -ra VER <<< "$VERSION"
-        
-        case "{{.CLI_ARGS}}" in
-          "major")
-            NEW_VERSION="$((${VER[0]} + 1)).0.0"
-            ;;
-          "minor")  
-            NEW_VERSION="${VER[0]}.$((${VER[1]} + 1)).0"
-            ;;
-          "patch"|"")
-            NEW_VERSION="${VER[0]}.${VER[1]}.$((${VER[2]} + 1))"
-            ;;
-          *)
-            echo "Invalid argument. Use 'major', 'minor', or 'patch'"
-            exit 1
-            ;;
-        esac
-        
-        echo "$NEW_VERSION" > VERSION
-        git add VERSION
-        git commit -m "chore: bump version to $NEW_VERSION"
-        git tag "v$NEW_VERSION"
-        git push origin "v$NEW_VERSION"
-        git push origin main
-
+      - source .env
+      - echo "{{.HOSTS}}"
+      - ssh-keyscan -t ed25519 "{{.HOSTS}}"
 
   generate-deploy-keys:
     desc: Generate new SSH keys for deployment
     dir: ./secrets/deploy-key
-    cmds:
+    cmds:    
       - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
+      - ssh-keyscan -t ed25519 nixos.tailcecc0.ts.net {{.DROPLET_IP}} > ./known_hosts
       - |
         # Generate known hosts file
         echo "Scanning hosts:"
-        ssh-keyscan -t ed25519 nixos.tailcecc0.ts.net 45.55.248.197 > ./known_hosts
         echo "✨ Keys generated successfully!"
         echo ""
         echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
@@ -103,3 +76,30 @@ tasks:
         echo "----------------------------------------"
         echo ""
         echo "All files saved in the ./secrets directory"
+
+  load-secrets:
+    desc: Load secrets from the ./secrets directory
+    dir: /tmp
+    cmds:
+      - |
+        op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
+        op read "op://kubernetes/nixos/cloudflared-creds.json" -f -o cloudflared-creds.json
+        op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
+
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/gatus"
+
+        scp tailscale-auth.key {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
+        scp cloudflared-creds.json {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/cloudflared/config.json
+        scp gatus.env {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/gatus/gatus.env
+
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/cloudflared/config.json"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/gatus/gatus.env"
+
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R gatus:gatus /etc/gatus"
+
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/tailscale/tailscale-auth.key"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/cloudflared/config.json"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/gatus/gatus.env"
