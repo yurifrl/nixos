@@ -44,7 +44,7 @@
     deploy = {
       nodes = {
         digitalOcean = {
-          hostname = "142.93.206.108"; # TODO: get from env
+          hostname = "digitalocean-nixos-01.tailcecc0.ts.net"; # TODO: get from env
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";

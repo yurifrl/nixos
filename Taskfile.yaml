@@ -11,7 +11,7 @@ tasks:
   load-envs:
     desc: Load environment variables
     cmds:
-      - op inject -i .env.op -o .env
+      - op inject -f -i .env.op -o .env
 
   build:
     desc: Build the NixOS image
@@ -45,16 +45,16 @@ tasks:
   generate-known-hosts:
     desc: Generate known hosts file
     cmds:
-      - source .env
-      - echo "{{.HOSTS}}"
-      - ssh-keyscan -t ed25519 "{{.HOSTS}}"
+      - ssh-keyscan -t ed25519 "{{.TAILSCALE_HOST}}" || true
+      - ssh-keyscan -t ed25519 "{{.DROPLET_IP}}" || true
 
   generate-deploy-keys:
     desc: Generate new SSH keys for deployment
     dir: ./secrets/deploy-key
     cmds:    
       - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
-      - ssh-keyscan -t ed25519 nixos.tailcecc0.ts.net {{.DROPLET_IP}} > ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.TAILSCALE_HOST}}" > ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.DROPLET_IP}}" >> ./known_hosts
       - |
         # Generate known hosts file
         echo "Scanning hosts:"
