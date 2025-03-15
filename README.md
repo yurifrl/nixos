@@ -15,7 +15,7 @@ sudo systemctl restart  cloudflared-tunnel-5ce2f91a-f98f-49d1-a966-5c0742f2bddc.
 
 Trobleshooting
 ```bash
-nix-env -iA nixos.dnsutils nixos.inetutils
+nix-env -iA nixos.dnsutils nixos.inetutils tcpdump
 ```
 
 ## Digital Ocean Nixos Image
