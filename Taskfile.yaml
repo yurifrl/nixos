@@ -78,22 +78,28 @@ tasks:
 
   generate-deploy-keys:
     desc: Generate new SSH keys for deployment
+    dir: ./secrets
     cmds:
       - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
       - |
+        # Generate known hosts file
+        echo "Scanning hosts:"
+        ssh-keyscan -t ed25519 100.87.29.58 45.55.248.197 > ./known_hosts
         echo "✨ Keys generated successfully!"
         echo ""
         echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
         echo "----------------------------------------"
-        cat deploy-key
+        cat ./deploy-key
         echo "----------------------------------------"
         echo ""
         echo "🔐 Public Key (add to NixOS config users/root.nix):"
         echo "----------------------------------------"
-        cat deploy-key.pub
+        cat ./deploy-key.pub
         echo "----------------------------------------"
         echo ""
         echo "🌐 Known Hosts (add to GitHub secret DEPLOY_KNOWN_HOSTS):"
         echo "----------------------------------------"
-        ssh-keyscan -t ed25519 $DROPLET_IP
+        cat ./known_hosts
         echo "----------------------------------------"
+        echo ""
+        echo "All files saved in the ./secrets directory"
