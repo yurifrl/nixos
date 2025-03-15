@@ -12,7 +12,7 @@
   services.cloudflared = {
     enable = true;
     tunnels = {
-      "5ce2f91a-f98f-49d1-a966-5c0742f2bddc" = {
+      "3b90d790-0a11-46ae-9421-d195cc828947" = {
         # credentialsFile = "${config.sops.secrets.cloudflared-creds.path}";
         credentialsFile = "/etc/cloudflared/config.json";
         ingress = {

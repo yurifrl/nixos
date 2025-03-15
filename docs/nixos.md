@@ -1,5 +1,8 @@
 # Home Systems
 
+# Cacge build
+- [Haskell for all: How to correctly cache build-time dependencies using Nix](https://www.haskellforall.com/2022/10/how-to-correctly-cache-build-time.html)
+
 # Important Concepts
 
 ## Daily Routine
