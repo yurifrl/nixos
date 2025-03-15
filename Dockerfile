@@ -36,7 +36,7 @@ ENV NIX_CACHE="file:///nix-cache"
 
 RUN echo "system-features = kvm" >> /etc/nix/nix.conf
 RUN echo "extra-substituters = ${NIX_CACHE}" >> /etc/nix/nix.conf
-RUN echo "extra-trusted-public-keys = cache-key-1:$(cat /root/.ssh/cache-pub-key.pem)" >> /etc/nix/nix.conf
+RUN echo "extra-trusted-public-keys = $(cat /root/.ssh/cache-pub-key.pem)" >> /etc/nix/nix.conf
 
 
 WORKDIR /workdir
