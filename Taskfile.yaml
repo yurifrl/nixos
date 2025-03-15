@@ -84,7 +84,7 @@ tasks:
       - |
         # Generate known hosts file
         echo "Scanning hosts:"
-        ssh-keyscan -t ed25519 100.87.29.58 45.55.248.197 > ./known_hosts
+        ssh-keyscan -t ed25519 nixos.tailcecc0.ts.net 45.55.248.197 > ./known_hosts
         echo "✨ Keys generated successfully!"
         echo ""
         echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
