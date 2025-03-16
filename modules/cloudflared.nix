@@ -15,8 +15,12 @@
       "3b90d790-0a11-46ae-9421-d195cc828947" = {
         credentialsFile = "/etc/cloudflared/config.json";
         ingress = {
-          "up.*" = "http://localhost:8080";
-          "gatus.*" = "http://localhost:8080";
+          "up.syscd.live" = "http://localhost:8080";
+          "up.syscd.tech" = "http://localhost:8080";
+          "up.syscd.xyz" = "http://localhost:8080";
+          "gatus.syscd.live" = "http://localhost:8080";
+          "gatus.syscd.tech" = "http://localhost:8080";
+          "gatus.syscd.xyz" = "http://localhost:8080";
         };
         default = "http_status:404";
       };
