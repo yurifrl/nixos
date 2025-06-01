@@ -5,7 +5,7 @@
 buildGoModule rec {
   pname = "gatus";
   # Testing renovate actually updating the version 5.16.0
-  version = "5.16.0";
+  version = "5.18.1";
 
   src = fetchFromGitHub {
     owner = "TwiN";
