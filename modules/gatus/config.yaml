@@ -106,16 +106,16 @@ endpoints:
     alerts:
       - type: discord
 
-  - name: Httpbin Via bind9
-    group: Httpbin
-    url: https://httpbin.syscd.dev/status/200
-    client:
-      dns-resolver: "tcp://192.168.68.200:53"
-    conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 2000"
-    alerts:
-      - type: discord
+  # - name: Httpbin Via bind9
+  #   group: Httpbin
+  #   url: https://httpbin.syscd.dev/status/200
+  #   client:
+  #     dns-resolver: "tcp://192.168.68.200:53"
+  #   conditions:
+  #     - "[STATUS] == 200"
+  #     - "[RESPONSE_TIME] < 2000"
+  #   alerts:
+  #     - type: discord
 
 web:
   port: 8080
