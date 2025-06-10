@@ -15,6 +15,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: "${{ secrets.DEPLOY_SSH_KEY }}"
+          known_hosts: "${{ secrets.DEPLOY_KNOWN_HOSTS }}"
+
+      - name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: "${{ secrets.TS_OAUTH_CLIENT_ID }}"
+          oauth-secret: "${{ secrets.TS_OAUTH_SECRET }}"
+          tags: tag:ci
+                
+      - name: Test connection to server
+        run: |
+          ssh -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'cowsay-version test'
       
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -34,23 +51,6 @@ jobs:
 
       - name: Install deploy-rs
         run: nix profile install nixpkgs#deploy-rs
-
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: "${{ secrets.DEPLOY_SSH_KEY }}"
-          known_hosts: "${{ secrets.DEPLOY_KNOWN_HOSTS }}"
-
-      - name: Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          oauth-client-id: "${{ secrets.TS_OAUTH_CLIENT_ID }}"
-          oauth-secret: "${{ secrets.TS_OAUTH_SECRET }}"
-          tags: tag:ci
-                
-      - name: Test connection to server
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'cowsay-version test'
 
       - name: Run deployment
         env:
