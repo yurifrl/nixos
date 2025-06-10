@@ -8,6 +8,7 @@
   # Define the system configuration
   outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: 
     let
+      # need to run deploy path:.#
       config = builtins.fromJSON (builtins.readFile ./deploy.json);
     in {
     packages.x86_64-linux = import ./packages { 
