@@ -9,6 +9,8 @@
     ];
 
     # Hashed password for root console access
-    hashedPassword = "$6$LtO26JQvixkuhF1Z$lEAnQyj.iZwoB2oebUPzOnteGmZPzXgir.Z1aK6B2Gy9WS4BF3grBcI89PJOz/tkdLXUIR9QJXgSw9zDI6wRq.";
+    # openssl passwd -6 $PASSWORD | pbcopy
+    # password is in nixos-digitalocean in 1password
+    hashedPassword = "$6$/9pgra2Hke1H9KOs$GN7uc29RAj9gcjOJK7nlbBuLrrQZe6zT27l5bLg9FQIymCj3VaniOP/Brv/dWtR1Y0Fw0m3X8gpllb9RdT.rj/";
   };
 } 
