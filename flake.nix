@@ -6,7 +6,10 @@
   };
 
   # Define the system configuration
-  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: {
+  outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: 
+    let
+      config = import ./deploy.nix;
+    in {
     packages.x86_64-linux = import ./packages { 
       pkgs = nixpkgs.legacyPackages.x86_64-linux; 
     };
@@ -44,7 +47,7 @@
     deploy = {
       nodes = {
         digitalOcean = {
-          hostname = "digitalocean-nixos-01.tailcecc0.ts.net"; # TODO: get from env
+          hostname = config.digitalOceanHostname;
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";
@@ -55,5 +58,13 @@
     };
 
     checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+
+    devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+      buildInputs = with nixpkgs.legacyPackages.x86_64-linux; [ openssh ];
+      shellHook = ''
+        echo "Adding ${config.digitalOceanHostname} to known_hosts..."
+        ssh-keyscan -t ed25519 ${config.digitalOceanHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach ${config.digitalOceanHostname}"
+      '';
+    };
   };
 }

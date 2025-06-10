@@ -28,10 +28,6 @@ jobs:
           oauth-client-id: "${{ secrets.TS_OAUTH_CLIENT_ID }}"
           oauth-secret: "${{ secrets.TS_OAUTH_SECRET }}"
           tags: tag:ci
-                
-      - name: Test connection to server
-        run: |
-          ssh -o StrictHostKeyChecking=no root@${{ secrets.DROPLET_IP }} 'cowsay-version test'
       
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
@@ -40,6 +36,18 @@ jobs:
         run: |
           mkdir -p ~/.config/nix
           echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+      - name: Create deploy.nix
+        run: |
+          echo '${{ secrets.DEPLOY_NIX }}' > deploy.nix
+                
+      - name: Test connection to servers
+        run: |
+          # Extract hostnames from deploy.nix and test each one
+          for hostname in $(nix-instantiate --eval --expr 'let config = import ./deploy.nix; in builtins.attrValues config' | tr -d '"[]'); do
+            echo "Testing connection to $hostname..."
+            ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
+          done
 
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@v6
@@ -53,6 +61,4 @@ jobs:
         run: nix profile install nixpkgs#deploy-rs
 
       - name: Run deployment
-        env:
-          DROPLET_IP: "${{ secrets.DROPLET_IP }}"
         run: deploy .#

@@ -20,15 +20,10 @@ RUN bazel --version
 RUN mkdir -p /root/.cache/bazel && \
     chmod -R 777 /root/.cache/bazel
 
-# === SSH
-ARG DROPLET_IP
-
-# Set up SSH directory
-RUN mkdir -p /root/.ssh
-RUN ssh-keyscan -t ed25519 ${DROPLET_IP} >> /root/.ssh/known_hosts
 # === Cache
-# Generate Nix signing key for binary cache
-RUN nix-store --generate-binary-cache-key cache-key-1 /root/.ssh/cache-priv-key.pem /root/.ssh/cache-pub-key.pem && \
+# Create SSH directory and generate Nix signing key for binary cache
+RUN mkdir -p /root/.ssh && \
+    nix-store --generate-binary-cache-key cache-key-1 /root/.ssh/cache-priv-key.pem /root/.ssh/cache-pub-key.pem && \
     chmod 600 /root/.ssh/cache-priv-key.pem && \
     chmod 644 /root/.ssh/cache-pub-key.pem
 

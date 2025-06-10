@@ -1,9 +1,10 @@
 x-base-service: &base_service
   build:
     context: .
-    args:
-      DROPLET_IP: $DROPLET_IP
   network_mode: host
+  dns:
+    - 8.8.8.8
+    - 1.1.1.1
   environment:
     SSH_AUTH_SOCK: /ssh-agent
     NIXPKGS_ALLOW_BROKEN: 1
