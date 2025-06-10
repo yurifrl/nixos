@@ -59,26 +59,26 @@
     groups.tailscale = { };
   };
 
-  services.unbound = {
-    enable = true;
-    settings = {
-      server = {
-        interface = "127.0.0.1";
-        access-control = "127.0.0.0/8 allow";
-        do-not-query-localhost = "no";
-      };
-      forward-zone = [
-        {
-          name = "tailcecc0.ts.net";
-          forward-addr = "100.100.100.100";
-        }
-        {
-          name = ".";
-          forward-addr = "8.8.8.8";
-        }
-      ];
-    };
-  };
+  # services.unbound = {
+  #   enable = true;
+  #   settings = {
+  #     server = {
+  #       interface = "127.0.0.1";
+  #       access-control = "127.0.0.0/8 allow";
+  #       do-not-query-localhost = "no";
+  #     };
+  #     forward-zone = [
+  #       {
+  #         name = "tailcecc0.ts.net";
+  #         forward-addr = "100.100.100.100";
+  #       }
+  #       {
+  #         name = ".";
+  #         forward-addr = "8.8.8.8";
+  #       }
+  #     ];
+  #   };
+  # };
 
-  networking.nameservers = [ "127.0.0.1" ];
+  # networking.nameservers = [ "127.0.0.1" ];
 }
