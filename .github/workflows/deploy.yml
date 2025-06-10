@@ -37,14 +37,14 @@ jobs:
           mkdir -p ~/.config/nix
           echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
-      - name: Create deploy.nix
+      - name: Create deploy.json
         run: |
-          echo '${{ secrets.DEPLOY_NIX }}' > deploy.nix
+          echo "${{ secrets.DEPLOY_NIX_JSON }}" > deploy.json
                 
       - name: Test connection to servers
         run: |
-          # Extract hostnames from deploy.nix and test each one
-          for hostname in $(nix-instantiate --eval --expr 'let config = import ./deploy.nix; in builtins.attrValues config' | tr -d '"[]'); do
+          # Extract hostnames from deploy.json and test each one
+          for hostname in $(jq -r '.[]' deploy.json); do
             echo "Testing connection to $hostname..."
             ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
           done
@@ -61,4 +61,4 @@ jobs:
         run: nix profile install nixpkgs#deploy-rs
 
       - name: Run deployment
-        run: deploy .#
+        run: deploy path:.#

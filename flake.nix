@@ -8,7 +8,7 @@
   # Define the system configuration
   outputs = { self, nixpkgs, deploy-rs, ... } @ inputs: 
     let
-      config = import ./deploy.nix;
+      config = builtins.fromJSON (builtins.readFile ./deploy.json);
     in {
     packages.x86_64-linux = import ./packages { 
       pkgs = nixpkgs.legacyPackages.x86_64-linux; 

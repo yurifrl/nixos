@@ -16,4 +16,3 @@ builds
 deploy-key
 deploy-key**
 .env
-deploy.nix

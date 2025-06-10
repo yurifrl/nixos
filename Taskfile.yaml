@@ -65,6 +65,10 @@ tasks:
     dir: /tmp
     cmds:
       - |
+        op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
+        echo "deploy.json" >> .git/info/exclude
+        echo "deploy.json added to local git exclusion, (gambiarra to not commit deploy.json)"
+
         op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
         op read "op://kubernetes/nixos/cloudflared-creds.json" -f -o cloudflared-creds.json
         op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
