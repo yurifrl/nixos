@@ -39,7 +39,7 @@ jobs:
 
       - name: Create deploy.json
         run: |
-          echo "${{ secrets.DEPLOY_NIX_JSON }}" > deploy.json
+          printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
                 
       - name: Test connection to servers
         run: |
