@@ -43,8 +43,8 @@ jobs:
                 
       - name: Test connection to servers
         run: |
-          # Extract hostnames from deploy.json and test each one
-          for hostname in $(jq -r '.[]' deploy.json); do
+          # Extract hostnames from deploy.json and test each one (skip Tailscale hostname)
+          for hostname in $(jq -r 'to_entries[] | select(.key != "digitalOceanTailscaleHostname") | .value' deploy.json); do
             echo "Testing connection to $hostname..."
             ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
           done
