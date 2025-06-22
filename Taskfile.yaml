@@ -59,33 +59,36 @@ tasks:
         echo "All files saved in the ./secrets directory"
         echo "add here https://github.com/yurifrl/nixos/settings/secrets/actions to DEPLOY_SSH_KEY"
 
+  load-build-secrets:
+    desc: Load build secrets from the ./secrets directory
+    cmds:
+      - |
+        echo "deploy.json" >> .git/info/exclude
+        op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
+        echo "deploy.json added to local git exclusion, (gambiarra to not commit deploy.json)"
 
   load-secrets:
     desc: Load secrets from the ./secrets directory
-    dir: /tmp
+    dir: ./secrets
     cmds:
       - |
-        op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
-        echo "deploy.json" >> .git/info/exclude
-        echo "deploy.json added to local git exclusion, (gambiarra to not commit deploy.json)"
+        # op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
+        # op read "op://kubernetes/nixos/cloudflared-creds.json" -f -o cloudflared-creds.json
+        # op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
 
-        op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-        op read "op://kubernetes/nixos/cloudflared-creds.json" -f -o cloudflared-creds.json
-        op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
+        # ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/gatus"
 
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/gatus"
+        # scp tailscale-auth.key {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
+        # scp cloudflared-creds.json {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/cloudflared/config.json
+        # scp gatus.env {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/gatus/gatus.env
 
-        scp tailscale-auth.key {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
-        scp cloudflared-creds.json {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/cloudflared/config.json
-        scp gatus.env {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/gatus/gatus.env
-
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/cloudflared/config.json"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/gatus/gatus.env"
+        # ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
+        # ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/cloudflared/config.json"
+        # ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/gatus/gatus.env"
 
         ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
         ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R gatus:gatus /etc/gatus"
+        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
 
         ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/tailscale/tailscale-auth.key"
         ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/cloudflared/config.json"

@@ -32,6 +32,10 @@ jobs:
             /nix/store
             /nix-cache
 
+      - name: Create deploy.json
+        run: |
+          printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
+      
       - name: Build NixOS Image
         run: |
           nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage

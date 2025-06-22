@@ -2,6 +2,15 @@
 { config, lib, pkgs, ... }:
 
 {
+  # Create cloudflared user and group
+  users.users.cloudflared = {
+    isSystemUser = true;
+    group = "cloudflared";
+    description = "Cloudflared service user";
+  };
+  
+  users.groups.cloudflared = {};
+
   # Fix permission issues with the config file
   system.activationScripts.cloudflaredPerms = ''
     mkdir -p /etc/cloudflared
