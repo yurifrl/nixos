@@ -8,6 +8,11 @@ tasks:
     cmds:
       - nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage --system x86_64-linux
 
+  nix-deploy:
+    desc: Deploy the NixOS image
+    cmds:
+      - deploy path:.#
+
   load-envs:
     desc: Load environment variables
     cmds:
