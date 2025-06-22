@@ -59,26 +59,36 @@
     groups.tailscale = { };
   };
 
-  # services.unbound = {
-  #   enable = true;
-  #   settings = {
-  #     server = {
-  #       interface = "127.0.0.1";
-  #       access-control = "127.0.0.0/8 allow";
-  #       do-not-query-localhost = "no";
-  #     };
-  #     forward-zone = [
-  #       {
-  #         name = "tailcecc0.ts.net";
-  #         forward-addr = "100.100.100.100";
-  #       }
-  #       {
-  #         name = ".";
-  #         forward-addr = "8.8.8.8";
-  #       }
-  #     ];
-  #   };
-  # };
+  # DNS configuration for Tailscale MagicDNS integration
+  # unbound acts as a local DNS forwarder to handle both Tailscale and regular DNS queries:
+  # - Tailscale domains (*.ts.net) are forwarded to Tailscale's DNS (100.100.100.100)
+  # - All other domains are forwarded to public DNS (8.8.8.8)
+  # This allows seamless resolution of Tailscale device hostnames while maintaining internet DNS
+  services.unbound = {
+    enable = true;
+    settings = {
+      server = {
+        interface = "127.0.0.1";
+        access-control = "127.0.0.0/8 allow";
+        do-not-query-localhost = "no";
+      };
+      forward-zone = [
+        {
+          name = "tailcecc0.ts.net";
+          forward-addr = "100.100.100.100";
+        }
+        {
+          name = ".";
+          forward-addr = [
+            "8.8.8.8"
+            "8.8.4.4"
+            "1.1.1.1"
+            "1.0.0.1"
+          ];
+        }
+      ];
+    };
+  };
 
-  # networking.nameservers = [ "127.0.0.1" ];
+  networking.nameservers = [ "127.0.0.1" ];
 }

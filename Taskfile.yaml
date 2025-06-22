@@ -27,13 +27,6 @@ tasks:
     cmds:
       - doctl compute image create nix-image --region nyc1 --image-url "https://github.com/yurifrl/nixos/actions/runs/13526601851/artifacts/2650149472" --image-description "Custom nix image"
 
-  generate-known-hosts:
-    desc: Generate known hosts file
-    cmds:
-      - ssh-keyscan -t ed25519 "{{.TAILSCALE_HOST}}" || true
-      - ssh-keyscan -t ed25519 "{{.DROPLET_IP}}" || true
-      - echo "add here https://github.com/yurifrl/nixos/settings/secrets/actions to DEPLOY_KNOWN_HOSTS"
-
   generate-deploy-keys:
     desc: Generate new SSH keys for deployment
     dir: ./secrets/deploy-key
