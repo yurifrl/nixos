@@ -16,12 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: "${{ secrets.DEPLOY_SSH_KEY }}"
-          known_hosts: "${{ secrets.DEPLOY_KNOWN_HOSTS }}"
-
       - name: Tailscale
         uses: tailscale/github-action@v3
         with:
@@ -40,6 +34,26 @@ jobs:
       - name: Create deploy.json
         run: |
           printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
+
+      - name: Generate and setup SSH keys
+        run: |
+          # Generate known hosts from deploy.json
+          echo "Generating known hosts..."
+          KNOWN_HOSTS=""
+          for hostname in $(jq -r 'to_entries[] | .value' deploy.json); do
+            echo "Scanning $hostname..."
+            host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
+            if [ -n "$host_key" ]; then
+              KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
+            fi
+          done
+          
+          # Setup SSH key and known hosts
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
                 
       - name: Test connection to servers
         run: |
