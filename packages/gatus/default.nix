@@ -4,14 +4,14 @@
 }:
 buildGoModule rec {
   pname = "gatus";
-  # Testing renovate actually updating the version 5.16.0
-  version = "5.16.0";
+  # Testing renovate actually updating the version 5.22.0
+  version = "5.22.0";
 
   src = fetchFromGitHub {
     owner = "TwiN";
     repo = "gatus";
     rev = "v${version}";
-    sha256 = "0wzgxs8l33mdknpq0v5ppw981vzdi1v5jyjdbngwkjyrx3zsmyy5"; # nix-prefetch-url --unpack https://github.com/TwiN/gatus/archive/refs/tags/v5.16.0.tar.gz
+    sha256 = "0wzgxs8l33mdknpq0v5ppw981vzdi1v5jyjdbngwkjyrx3zsmyy5"; # nix-prefetch-url --unpack https://github.com/TwiN/gatus/archive/refs/tags/v5.22.0.tar.gz
   };
  
 
