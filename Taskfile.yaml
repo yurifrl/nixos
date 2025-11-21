@@ -59,8 +59,10 @@ tasks:
     dir: ./secrets/deploy-key
     cmds:
       - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
-      - ssh-keyscan -t ed25519 "{{.TAILSCALE_HOST}}" > ./known_hosts
-      - ssh-keyscan -t ed25519 "{{.DROPLET_IP}}" >> ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.GATUS_TAILSCALE_HOST}}" > ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.GATUS_DROPLET_IP}}" >> ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.FOUNDRY_TAILSCALE_HOST}}" >> ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.FOUNDRY_DROPLET_IP}}" >> ./known_hosts
       - |
         echo "✨ Keys generated successfully!"
         echo ""
