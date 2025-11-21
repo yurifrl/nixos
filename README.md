@@ -61,8 +61,9 @@ Both services share common infrastructure (SSH, Tailscale VPN) but are deployed 
 ├── .github/workflows/
 │   ├── build.yml              # Main: build & release
 │   ├── deploy.yml             # Main: deploy
-│   ├── _build-image.yml       # Reusable: build single image
-│   └── _deploy-node.yml       # Reusable: deploy to node(s)
+│   └── lib/                   # Reusable workflows (hidden from UI)
+│       ├── _build-image.yml   # Build single image
+│       └── _deploy-node.yml   # Deploy to single node
 ├── docs/
 │   └── FOUNDRY.md             # Foundry-specific docs
 └── README.md                   # This file
@@ -382,9 +383,9 @@ The repository uses **version-based releases** with **reusable workflows**:
 - `build.yml` - Detects version changes, builds images, creates releases
 - `deploy.yml` - Deploys to specified nodes via Tailscale
 
-**Reusable Library Workflows** (prefixed with `_`):
-- `_build-image.yml` - Builds a single NixOS image and uploads to DO
-- `_deploy-node.yml` - Deploys configuration to specified node(s)
+**Reusable Library Workflows** (in `lib/`):
+- `lib/_build-image.yml` - Builds a single NixOS image and uploads to DO
+- `lib/_deploy-node.yml` - Deploys configuration to a single node
 
 **How it works**:
 1. Change `gatus.version` or `foundry.version` and push to main
