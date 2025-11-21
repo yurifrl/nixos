@@ -49,7 +49,7 @@
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.gatus;
             sshUser = "root";
-            remoteBuild = true;
+            remoteBuild = false;
           };
         };
 
@@ -59,7 +59,7 @@
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.foundry;
             sshUser = "root";
-            remoteBuild = true;
+            remoteBuild = false;
           };
         };
       };
