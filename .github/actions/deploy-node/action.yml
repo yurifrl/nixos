@@ -75,7 +75,7 @@ runs:
       shell: bash
       run: |
         echo "🚀 Deploying to ${{ inputs.node-name }}..."
-        deploy path:.#${{ inputs.node-name }}
+        deploy 'path:.#${{ inputs.node-name }}'
 
     - name: Deployment Summary
       shell: bash
