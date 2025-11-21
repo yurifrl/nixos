@@ -83,22 +83,34 @@ Both services share common infrastructure (SSH, Tailscale VPN) but are deployed 
 
 ```bash
 # Build both images
-task nix-build
+task nix:build
 
 # Build specific image
-task nix-build-gatus
-task nix-build-foundry
+task nix:build:gatus
+task nix:build:foundry
 ```
 
 ### Deploying
 
 ```bash
 # Deploy both configurations
-task nix-deploy
+task nix:deploy
 
 # Deploy specific configuration
-task nix-deploy-gatus
-task nix-deploy-foundry
+task nix:deploy:gatus
+task nix:deploy:foundry
+```
+
+### Version Management
+
+```bash
+# Bump version and deploy with AI-generated changelog
+IMAGE=gatus task gh:deploy              # Patch bump (default)
+IMAGE=foundry BUMP_TYPE=minor task gh:deploy
+IMAGE=gatus BUMP_TYPE=major task gh:deploy
+
+# Or manually bump version
+IMAGE=foundry BUMP_TYPE=minor task bump
 ```
 
 ## Setup New Machines
@@ -172,22 +184,22 @@ Update `deploy.json` in 1Password (`op://kubernetes/nixos/deploy.json`):
 
 ```bash
 # Load build secrets (deploy.json)
-task load-build-secrets
+task secrets:load:build
 
 # Load runtime secrets to servers
-task load-secrets-gatus   # Tailscale, Cloudflare, Gatus env
-task load-secrets-foundry # Tailscale, Cloudflare, Foundry license
+task secrets:load:gatus   # Tailscale, Cloudflare, Gatus env
+task secrets:load:foundry # Tailscale, Cloudflare, Foundry license
 ```
 
 ### 5. Initial Deployment
 
 ```bash
 # Deploy configurations to both servers
-task nix-deploy
+task nix:deploy
 
 # Or deploy individually
-task nix-deploy-gatus
-task nix-deploy-foundry
+task nix:deploy:gatus
+task nix:deploy:foundry
 ```
 
 ## Services
@@ -282,7 +294,7 @@ ssh root@<hostname> tailscale status
 nix flake check
 
 # Build locally
-task nix-build-gatus
+task nix:build:gatus
 
 # Test configuration
 nixos-rebuild build-vm --flake .#gatus
@@ -296,7 +308,7 @@ nixos-rebuild build-vm --flake .#gatus
 vim modules/gatus/config.yaml
 
 # Deploy directly (no rebuild needed)
-task nix-deploy-gatus
+task nix:deploy:gatus
 ```
 
 **For image updates** (requires rebuild):
@@ -314,7 +326,7 @@ git push
 
 # GitHub Actions will build and create release
 # Then deploy the new configuration
-task nix-deploy-foundry
+task nix:deploy:foundry
 ```
 
 ### Adding New Services

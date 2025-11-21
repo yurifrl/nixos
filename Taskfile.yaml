@@ -2,62 +2,150 @@ version: "3"
 
 dotenv: [.env]
 
+vars:
+  IMAGE: '{{.IMAGE | default "gatus"}}'
+  BUMP_TYPE: '{{.BUMP_TYPE | default "patch"}}'
+
 tasks:
-  nix-build:
+  bump:
+    desc: Bump version for an image (IMAGE=gatus|foundry BUMP_TYPE=major|minor|patch)
+    cmds:
+      - |
+        VERSION_FILE="{{.IMAGE}}.version"
+        if [ ! -f "$VERSION_FILE" ]; then
+          echo "❌ Error: $VERSION_FILE not found"
+          exit 1
+        fi
+
+        CURRENT=$(cat "$VERSION_FILE")
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+        case "{{.BUMP_TYPE}}" in
+          major)
+            NEW_VERSION="$((MAJOR + 1)).0.0"
+            ;;
+          minor)
+            NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+            ;;
+          patch)
+            NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+            ;;
+          *)
+            echo "❌ Invalid BUMP_TYPE: {{.BUMP_TYPE}}"
+            exit 1
+            ;;
+        esac
+
+        echo "$NEW_VERSION" > "$VERSION_FILE"
+        echo "✅ Bumped {{.IMAGE}} from $CURRENT to $NEW_VERSION"
+
+  gh:deploy:
+    desc: Bump version, generate AI changelog, and push (IMAGE=gatus|foundry BUMP_TYPE=patch|minor|major)
+    cmds:
+      - task: bump
+        vars:
+          IMAGE: '{{.IMAGE}}'
+          BUMP_TYPE: '{{.BUMP_TYPE}}'
+      - |
+        VERSION_FILE="{{.IMAGE}}.version"
+        NEW_VERSION=$(cat "$VERSION_FILE")
+
+        echo "🤖 Generating changelog with AI..."
+
+        # Get git changes since last commit
+        GIT_DIFF=$(git diff HEAD)
+        GIT_STATUS=$(git status --short)
+
+        # Use Claude CLI to generate changelog
+        CHANGELOG=$(claude --no-color <<EOF
+        Generate a concise changelog for this NixOS {{.IMAGE}} image release.
+
+        New version: $NEW_VERSION
+
+        Recent changes:
+        $GIT_STATUS
+
+        Diff:
+        $GIT_DIFF
+
+        Format:
+        - Use conventional commits style
+        - Be specific about what changed
+        - 2-3 bullet points maximum
+        - No markdown formatting
+        - Start each line with "- "
+        EOF
+        )
+
+        echo "📝 Changelog:"
+        echo "$CHANGELOG"
+
+        # Stage and commit with AI-generated message
+        git add "$VERSION_FILE"
+        git add -u
+
+        git commit -m "$(cat <<COMMIT_EOF
+chore({{.IMAGE}}): bump to v$NEW_VERSION
+
+$CHANGELOG
+COMMIT_EOF
+)"
+
+        echo "🚀 Pushing to GitHub..."
+        git push
+
+        echo ""
+        echo "✅ Done! GitHub Actions will build and release {{.IMAGE}}-v$NEW_VERSION"
+
+  nix:build:
     desc: Build both NixOS images (gatus and foundry)
     cmds:
-      - task: nix-build-gatus
-      - task: nix-build-foundry
+      - task: nix:build:gatus
+      - task: nix:build:foundry
 
-  nix-build-gatus:
+  nix:build:gatus:
     desc: Build the Gatus monitoring image
     cmds:
       - nix build .#nixosConfigurations.gatus.config.system.build.digitalOceanImage --system x86_64-linux
 
-  nix-build-foundry:
+  nix:build:foundry:
     desc: Build the Foundry VTT image
     cmds:
       - nix build .#nixosConfigurations.foundry.config.system.build.digitalOceanImage --system x86_64-linux
 
-  nix-deploy:
+  nix:deploy:
     desc: Deploy both NixOS configurations (gatus and foundry)
     cmds:
       - deploy path:.#
 
-  nix-deploy-gatus:
+  nix:deploy:gatus:
     desc: Deploy only Gatus configuration
     cmds:
       - deploy path:.#gatus
 
-  nix-deploy-foundry:
+  nix:deploy:foundry:
     desc: Deploy only Foundry configuration
     cmds:
       - deploy path:.#foundry
 
-  load-envs:
+  load:envs:
     desc: Load environment variables
     cmds:
       - op inject -f -i .env.op -o .env
 
-  cache:
+  nix:cache:
     desc: Cache build products and dependencies
     cmds:
       - ./hack/cache.sh
 
-  upload:
-    cmds:
-      - doctl compute image create nix-image --region nyc1 --image-url "https://github.com/yurifrl/nixos/actions/runs/13526601851/artifacts/2650149472" --image-description "Custom nix image"
-
-  generate-deploy-keys:
+  ssh:generate:
     desc: Generate new SSH keys for deployment
     dir: ./secrets/deploy-key
-    cmds:    
+    cmds:
       - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
       - ssh-keyscan -t ed25519 "{{.TAILSCALE_HOST}}" > ./known_hosts
       - ssh-keyscan -t ed25519 "{{.DROPLET_IP}}" >> ./known_hosts
       - |
-        # Generate known hosts file
-        echo "Scanning hosts:"
         echo "✨ Keys generated successfully!"
         echo ""
         echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
@@ -70,29 +158,28 @@ tasks:
         cat ./deploy-key.pub
         echo "----------------------------------------"
         echo ""
-        echo "🌐 Known Hosts (add to GitHub secret DEPLOY_KNOWN_HOSTS):"
+        echo "🌐 Known Hosts (for reference):"
         echo "----------------------------------------"
         cat ./known_hosts
         echo "----------------------------------------"
         echo ""
-        echo "All files saved in the ./secrets directory"
-        echo "add here https://github.com/yurifrl/nixos/settings/secrets/actions to DEPLOY_SSH_KEY"
+        echo "📍 Add to: https://github.com/yurifrl/nixos/settings/secrets/actions"
 
-  load-build-secrets:
-    desc: Load build secrets from the ./secrets directory
+  secrets:load:build:
+    desc: Load build secrets (deploy.json from 1Password)
     cmds:
       - |
         echo "deploy.json" >> .git/info/exclude
         op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
-        echo "deploy.json added to local git exclusion, (gambiarra to not commit deploy.json)"
+        echo "✅ deploy.json loaded"
 
-  load-secrets:
-    desc: Load all secrets to both servers (alias for backward compatibility)
+  secrets:load:
+    desc: Load all runtime secrets to both servers
     cmds:
-      - task: load-secrets-gatus
-      - task: load-secrets-foundry
+      - task: secrets:load:gatus
+      - task: secrets:load:foundry
 
-  load-secrets-gatus:
+  secrets:load:gatus:
     desc: Load Gatus server secrets
     dir: ./secrets
     cmds:
@@ -118,7 +205,7 @@ tasks:
 
         echo "✅ Gatus secrets loaded successfully"
 
-  load-secrets-foundry:
+  secrets:load:foundry:
     desc: Load Foundry server secrets
     dir: ./secrets
     cmds:

@@ -145,13 +145,13 @@ Save to 1Password: `op://kubernetes/nixos/deploy.json`
 
 ```bash
 # Load build secrets
-task load-build-secrets
+task secrets:load:build
 
 # Load Foundry runtime secrets
-task load-secrets-foundry
+task secrets:load:foundry
 
 # Deploy Foundry configuration
-task nix-deploy-foundry
+task nix:deploy:foundry
 ```
 
 ## Configuration
