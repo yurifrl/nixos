@@ -110,7 +110,7 @@ Format:
 """
 
     try:
-        changelog = run_cmd(f"claude --no-color <<'EOF'\n{prompt}\nEOF")
+        changelog = run_cmd(f"claude <<'EOF'\n{prompt}\nEOF")
         return changelog.strip()
     except Exception as e:
         console.print(f"[yellow]⚠️  Failed to generate changelog: {e}[/yellow]")
