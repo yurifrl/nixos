@@ -104,13 +104,13 @@ task nix:deploy:foundry
 ### Version Management
 
 ```bash
-# Bump version and deploy with AI-generated changelog
-IMAGE=gatus task gh:deploy              # Patch bump (default)
-IMAGE=foundry BUMP_TYPE=minor task gh:deploy
-IMAGE=gatus BUMP_TYPE=major task gh:deploy
+# Release new version with AI-generated changelog
+IMAGE=gatus task release                    # Patch bump (default)
+IMAGE=foundry BUMP_TYPE=minor task release  # Minor bump
+IMAGE=gatus BUMP_TYPE=major task release    # Major bump
 
-# Or manually bump version
-IMAGE=foundry BUMP_TYPE=minor task bump
+# Commit locally without pushing (review changelog first)
+IMAGE=foundry PUSH=false task release
 ```
 
 ## Setup New Machines
@@ -316,16 +316,36 @@ task nix:deploy:gatus
 # Make changes to modules
 vim modules/foundry/default.nix
 
-# Bump version to trigger build
-echo "1.0.2" > foundry.version
+# Release with AI-generated changelog (bumps version, commits, pushes)
+IMAGE=foundry task release
 
-# Commit and push
-git add foundry.version modules/foundry/default.nix
-git commit -m "feat: update foundry configuration"
+# GitHub Actions will automatically build and create release
+# Then deploy the new configuration
+task nix:deploy:foundry
+```
+
+**Advanced release options**:
+```bash
+# Review changelog before pushing
+IMAGE=gatus PUSH=false task release
+# Review the commit, then manually push:
 git push
 
-# GitHub Actions will build and create release
-# Then deploy the new configuration
+# Different bump types
+IMAGE=foundry BUMP_TYPE=minor task release  # 1.0.0 → 1.1.0
+IMAGE=gatus BUMP_TYPE=major task release    # 1.0.0 → 2.0.0
+```
+
+**Complete workflow example**:
+```bash
+# 1. Make changes
+vim modules/foundry/default.nix
+
+# 2. Release (bump, AI changelog, commit, push)
+IMAGE=foundry task release
+
+# 3. Wait for GitHub Actions to build (~5-10 min)
+# 4. Deploy new config to running server
 task nix:deploy:foundry
 ```
 

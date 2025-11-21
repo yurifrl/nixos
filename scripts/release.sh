@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Bump version, generate AI changelog, commit, and push
-# Usage: ./scripts/bump-and-deploy.sh <image> <bump_type>
-# Example: ./scripts/bump-and-deploy.sh gatus patch
+# Release: Bump version, generate AI changelog, commit, and optionally push
+# Usage: ./scripts/release.sh <image> <bump_type> [push]
+# Examples:
+#   ./scripts/release.sh gatus patch
+#   ./scripts/release.sh foundry minor
+#   ./scripts/release.sh gatus patch false  # Don't push
 
 IMAGE="${1:-gatus}"
 BUMP_TYPE="${2:-patch}"
+PUSH="${3:-true}"
 VERSION_FILE="${IMAGE}.version"
 
 # Validate inputs
@@ -80,10 +84,15 @@ $CHANGELOG
 COMMIT_EOF
 )"
 
-# Push
-echo "🚀 Pushing to GitHub..."
-git push
-
-echo ""
-echo "✅ Done! GitHub Actions will build and release $IMAGE-v$NEW_VERSION"
-echo "🔗 Watch at: https://github.com/yurifrl/nixos/actions"
+# Push (if enabled)
+if [[ "$PUSH" == "true" ]]; then
+  echo "🚀 Pushing to GitHub..."
+  git push
+  echo ""
+  echo "✅ Done! GitHub Actions will build and release $IMAGE-v$NEW_VERSION"
+  echo "🔗 Watch at: https://github.com/yurifrl/nixos/actions"
+else
+  echo ""
+  echo "✅ Committed locally (not pushed)"
+  echo "📝 Run 'git push' when ready to trigger build"
+fi
