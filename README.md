@@ -167,7 +167,7 @@ Update `deploy.json` in 1Password (`op://kubernetes/nixos/deploy.json`):
     },
     "foundry": {
       "hostname": "foundry-droplet-ip",
-      "tailscaleHostname": "foundry.tailcecc0.ts.net",
+      "tailscaleHostname": "rpg.tailcecc0.ts.net",
       "sshUser": "root"
     }
   }
@@ -201,9 +201,9 @@ task nix:deploy:foundry
 ### Gatus (Monitoring)
 
 **Access**:
-- https://gatus.syscd.live
-- https://up.syscd.live
-- http://gatus.tailcecc0.ts.net:8080 (via Tailscale)
+- https://gatus.syscd.live (public via Cloudflare)
+- https://up.syscd.live (public via Cloudflare)
+- http://gatus.tailcecc0.ts.net:8080 (Tailscale VPN)
 
 **Features**:
 - Uptime monitoring
@@ -226,9 +226,8 @@ ssh root@gatus.tailcecc0.ts.net systemctl restart gatus
 ### Foundry VTT (Game Server)
 
 **Access**:
-- https://foundry.syscd.live (public)
-- https://foundry.syscd.tech (public)
-- http://foundry.tailcecc0.ts.net:30000 (via Tailscale)
+- https://rpg.syscd.live (public via Cloudflare)
+- http://rpg.tailcecc0.ts.net:30000 (Tailscale VPN)
 
 **Features**:
 - Docker-based deployment
@@ -239,16 +238,16 @@ ssh root@gatus.tailcecc0.ts.net systemctl restart gatus
 **Commands**:
 ```bash
 # Check service status
-ssh root@foundry.tailcecc0.ts.net systemctl status foundry
+ssh root@rpg.tailcecc0.ts.net systemctl status foundry
 
 # View logs
-ssh root@foundry.tailcecc0.ts.net journalctl -u foundry -f
+ssh root@rpg.tailcecc0.ts.net journalctl -u foundry -f
 
 # Restart service (pulls latest Docker image)
-ssh root@foundry.tailcecc0.ts.net systemctl restart foundry
+ssh root@rpg.tailcecc0.ts.net systemctl restart foundry
 
 # Check Docker container
-ssh root@foundry.tailcecc0.ts.net docker ps
+ssh root@rpg.tailcecc0.ts.net docker ps
 ```
 
 See [docs/FOUNDRY.md](docs/FOUNDRY.md) for detailed Foundry setup and maintenance guide.
@@ -339,7 +338,7 @@ ssh root@<hostname> journalctl -u tailscale-autoconnect -f
 ssh root@gatus.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
 
 # Foundry
-ssh root@foundry.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
+ssh root@rpg.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
 ```
 
 **Service won't start**:

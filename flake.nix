@@ -53,7 +53,7 @@
           };
         };
 
-        # Foundry VTT node
+        # Foundry VTT node (rpg)
         foundry = {
           hostname = config.nodes.foundry.tailscaleHostname;
           profiles.system = {
@@ -72,7 +72,7 @@
       shellHook = ''
         echo "Adding nodes to known_hosts..."
         ssh-keyscan -t ed25519 ${config.nodes.gatus.tailscaleHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach gatus"
-        ssh-keyscan -t ed25519 ${config.nodes.foundry.tailscaleHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach foundry"
+        ssh-keyscan -t ed25519 ${config.nodes.foundry.tailscaleHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach rpg"
       '';
     };
   };

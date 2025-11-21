@@ -57,7 +57,7 @@
           --rm \
           -e FOUNDRY_ADMIN_KEY=$(cat /etc/foundry/admin-key) \
           -e FOUNDRY_LICENSE_KEY=$(cat /etc/foundry/license-key) \
-          -e FOUNDRY_HOSTNAME=foundry.syscd.live \
+          -e FOUNDRY_HOSTNAME=rpg.syscd.live \
           -e FOUNDRY_PROXY_SSL=true \
           -e FOUNDRY_PROXY_PORT=443 \
           -e CONTAINER_CACHE=/data/container_cache \

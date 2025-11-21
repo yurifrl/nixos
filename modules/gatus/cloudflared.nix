@@ -25,9 +25,7 @@
         credentialsFile = "/etc/cloudflared/config.json";
         ingress = {
           "up.syscd.live" = "http://localhost:8080";
-          "up.syscd.tech" = "http://localhost:8080";
           "gatus.syscd.live" = "http://localhost:8080";
-          "gatus.syscd.tech" = "http://localhost:8080";
         };
         default = "http_status:404";
       };

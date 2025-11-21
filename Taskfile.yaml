@@ -93,54 +93,51 @@ tasks:
   secrets:load:gatus:
     desc: Load Gatus server secrets
     dir: ./secrets
+    vars:
+      HOST: "{{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}"
+      DIRS: "/etc/tailscale /etc/cloudflared /etc/gatus"
     cmds:
-      - |
-        echo "Loading secrets for Gatus server..."
-        op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-        op read "op://kubernetes/nixos/gatus-cloudflared-creds.json" -f -o gatus-cloudflared-creds.json
-        op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
-
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/gatus"
-
-        scp tailscale-auth.key {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
-        scp gatus-cloudflared-creds.json {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}:/etc/cloudflared/config.json
-        scp gatus.env {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}:/etc/gatus/gatus.env
-
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chmod 600 /etc/cloudflared/config.json"
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chmod 600 /etc/gatus/gatus.env"
-
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chown -R gatus:gatus /etc/gatus"
-        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
-
-        echo "✅ Gatus secrets loaded successfully"
+      - echo "Loading secrets for Gatus server..."
+      # Download secrets from 1Password
+      - op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
+      - op read "op://kubernetes/nixos/gatus-cloudflared-creds.json" -f -o gatus-cloudflared-creds.json
+      - op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
+      # Setup directories
+      - ssh {{.HOST}} "mkdir -p {{.DIRS}}"
+      # Copy secrets
+      - scp tailscale-auth.key {{.HOST}}:/etc/tailscale/tailscale-auth.key
+      - scp gatus-cloudflared-creds.json {{.HOST}}:/etc/cloudflared/config.json
+      - scp gatus.env {{.HOST}}:/etc/gatus/gatus.env
+      # Set permissions
+      - ssh {{.HOST}} "chmod 600 /etc/tailscale/tailscale-auth.key /etc/cloudflared/config.json /etc/gatus/gatus.env"
+      - ssh {{.HOST}} "chown -R tailscale:tailscale /etc/tailscale"
+      - ssh {{.HOST}} "chown -R gatus:gatus /etc/gatus"
+      - ssh {{.HOST}} "chown -R cloudflared:cloudflared /etc/cloudflared"
+      - echo "✅ Gatus secrets loaded successfully"
 
   secrets:load:foundry:
     desc: Load Foundry server secrets
     dir: ./secrets
+    vars:
+      HOST: "{{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}"
+      DIRS: "/etc/tailscale /etc/cloudflared /etc/foundry"
     cmds:
-      - |
-        echo "Loading secrets for Foundry server..."
-        op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-        op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json
-        op read "op://kubernetes/nixos/foundry-license.key" -f -o foundry-license.key
-        op read "op://kubernetes/nixos/foundry-admin.key" -f -o foundry-admin.key
-
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/foundry"
-
-        scp tailscale-auth.key {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
-        scp foundry-cloudflared-tunnel.json {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/cloudflared/foundry-tunnel.json
-        scp foundry-license.key {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/foundry/license-key
-        scp foundry-admin.key {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/foundry/admin-key
-
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/cloudflared/foundry-tunnel.json"
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/foundry/license-key"
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/foundry/admin-key"
-
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
-        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chown -R foundry:foundry /etc/foundry"
-
-        echo "✅ Foundry secrets loaded successfully"
+      - echo "Loading secrets for Foundry server..."
+      # Download secrets from 1Password
+      - op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
+      - op read "op://kubernetes/foundry-cloudflared-tunnel.json/notesPlain" -f -o foundry-cloudflared-tunnel.json || op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json
+      - op read "op://kubernetes/nixos/foundry-license.key" -f -o foundry-license.key
+      - op read "op://kubernetes/nixos/foundry-admin.key" -f -o foundry-admin.key
+      # Setup directories
+      - ssh {{.HOST}} "mkdir -p {{.DIRS}}"
+      # Copy secrets
+      - scp tailscale-auth.key {{.HOST}}:/etc/tailscale/tailscale-auth.key
+      - scp foundry-cloudflared-tunnel.json {{.HOST}}:/etc/cloudflared/foundry-tunnel.json
+      - scp foundry-license.key {{.HOST}}:/etc/foundry/license-key
+      - scp foundry-admin.key {{.HOST}}:/etc/foundry/admin-key
+      # Set permissions
+      - ssh {{.HOST}} "chmod 600 /etc/tailscale/tailscale-auth.key /etc/cloudflared/foundry-tunnel.json /etc/foundry/license-key /etc/foundry/admin-key"
+      - ssh {{.HOST}} "chown -R tailscale:tailscale /etc/tailscale"
+      - ssh {{.HOST}} "chown -R cloudflared:cloudflared /etc/cloudflared"
+      - ssh {{.HOST}} "chown -R foundry:foundry /etc/foundry"
+      - echo "✅ Foundry secrets loaded successfully"

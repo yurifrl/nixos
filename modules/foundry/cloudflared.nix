@@ -15,13 +15,10 @@
   services.cloudflared = {
     enable = true;
     tunnels = {
-      # TODO: Replace with actual Foundry tunnel ID after creation
-      # Create tunnel with: cloudflare tunnel create foundry
-      "foundry-tunnel-id-placeholder" = {
+      "8bc2858c-a6a4-474f-9287-5af2c1928578" = {
         credentialsFile = "/etc/cloudflared/foundry-tunnel.json";
         ingress = {
-          "foundry.syscd.live" = "http://localhost:30000";
-          "foundry.syscd.tech" = "http://localhost:30000";
+          "rpg.syscd.live" = "http://localhost:30000";
         };
         default = "http_status:404";
       };

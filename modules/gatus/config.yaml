@@ -15,7 +15,7 @@ endpoints:
 
   - name: foundryvtt
     group: Live
-    url: https://foundry.syscd.live
+    url: https://rpg.syscd.live
     interval: 10s
     conditions:
       - "[STATUS] == 200"
