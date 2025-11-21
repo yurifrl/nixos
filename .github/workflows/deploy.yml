@@ -33,7 +33,11 @@ jobs:
       github.event.inputs.target == '' ||
       github.event.inputs.target == matrix.node
 
-    uses: ./.github/workflows/_deploy-node.yml
+    permissions:
+      contents: read
+      id-token: write
+
+    uses: ./.github/workflows/lib/_deploy-node.yml
     with:
       node_name: ${{ matrix.node }}
     secrets:
