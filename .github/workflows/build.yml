@@ -12,80 +12,39 @@ on:
       - 'flake.nix'
       - 'hardware.nix'
   workflow_dispatch:
-    inputs:
-      image:
-        description: 'Image to build'
-        required: true
-        type: choice
-        options:
-          - all
-          - gatus
-          - foundry
+
+permissions:
+  id-token: write
+  contents: write
 
 jobs:
-  # Determine which images to build
-  determine-builds:
+  build-gatus:
     runs-on: ubuntu-latest
-    outputs:
-      build_gatus: ${{ steps.check.outputs.build_gatus }}
-      build_foundry: ${{ steps.check.outputs.build_foundry }}
-      gatus_version: ${{ steps.versions.outputs.gatus }}
-      foundry_version: ${{ steps.versions.outputs.foundry }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      - name: Read versions
-        id: versions
-        run: |
-          echo "gatus=$(cat gatus.version)" >> $GITHUB_OUTPUT
-          echo "foundry=$(cat foundry.version)" >> $GITHUB_OUTPUT
-
-      - name: Check what to build
+      - name: Check if should build
         id: check
         run: |
-          # Manual dispatch
+          # Always build on manual dispatch
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if [[ "${{ github.event.inputs.image }}" == "all" ]]; then
-              echo "build_gatus=true" >> $GITHUB_OUTPUT
-              echo "build_foundry=true" >> $GITHUB_OUTPUT
-            elif [[ "${{ github.event.inputs.image }}" == "gatus" ]]; then
-              echo "build_gatus=true" >> $GITHUB_OUTPUT
-              echo "build_foundry=false" >> $GITHUB_OUTPUT
-            else
-              echo "build_gatus=false" >> $GITHUB_OUTPUT
-              echo "build_foundry=true" >> $GITHUB_OUTPUT
-            fi
+            echo "build=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Check if version files changed
+          # Check if gatus.version changed
           CHANGED=$(git diff --name-only HEAD~1 HEAD)
-
           if echo "$CHANGED" | grep -q "gatus.version"; then
-            echo "build_gatus=true" >> $GITHUB_OUTPUT
+            echo "build=true" >> $GITHUB_OUTPUT
           else
-            echo "build_gatus=false" >> $GITHUB_OUTPUT
+            echo "build=false" >> $GITHUB_OUTPUT
           fi
 
-          if echo "$CHANGED" | grep -q "foundry.version"; then
-            echo "build_foundry=true" >> $GITHUB_OUTPUT
-          else
-            echo "build_foundry=false" >> $GITHUB_OUTPUT
-          fi
-
-  # Build Gatus
-  build-gatus:
-    needs: determine-builds
-    if: needs.determine-builds.outputs.build_gatus == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-image
+      - name: Build and upload
+        if: steps.check.outputs.build == 'true'
+        uses: ./.github/actions/build-image
         with:
           image-name: gatus
         env:
@@ -96,17 +55,55 @@ jobs:
           GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-  # Build Foundry
+      - name: Create release
+        if: steps.check.outputs.build == 'true'
+        run: |
+          VERSION=$(cat gatus.version)
+          gh release create "gatus-v${VERSION}" \
+            --title "Gatus v${VERSION}" \
+            --notes "## Gatus Monitoring Image
+
+          Version: \`${VERSION}\`
+          Built from commit: ${{ github.sha }}
+
+          ### Usage
+          \`\`\`bash
+          # Find the image in DigitalOcean custom images:
+          # nixos-gatus-YYYYMMDD-HHMMSS
+
+          # Or deploy to existing droplet:
+          task nix-deploy-gatus
+          \`\`\`" || echo "Release may already exist"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   build-foundry:
-    needs: determine-builds
-    if: needs.determine-builds.outputs.build_foundry == 'true'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-image
+        with:
+          fetch-depth: 2
+
+      - name: Check if should build
+        id: check
+        run: |
+          # Always build on manual dispatch
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "build=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if foundry.version changed
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          if echo "$CHANGED" | grep -q "foundry.version"; then
+            echo "build=true" >> $GITHUB_OUTPUT
+          else
+            echo "build=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and upload
+        if: steps.check.outputs.build == 'true'
+        uses: ./.github/actions/build-image
         with:
           image-name: foundry
         env:
@@ -117,72 +114,26 @@ jobs:
           GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-  # Create GitHub release for Gatus
-  release-gatus:
-    needs: [determine-builds, build-gatus]
-    if: needs.determine-builds.outputs.build_gatus == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
+      - name: Create release
+        if: steps.check.outputs.build == 'true'
+        run: |
+          VERSION=$(cat foundry.version)
+          gh release create "foundry-v${VERSION}" \
+            --title "Foundry VTT v${VERSION}" \
+            --notes "## Foundry VTT Image
 
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: gatus-v${{ needs.determine-builds.outputs.gatus_version }}
-          name: Gatus v${{ needs.determine-builds.outputs.gatus_version }}
-          body: |
-            ## Gatus Monitoring Image
+          Version: \`${VERSION}\`
+          Built from commit: ${{ github.sha }}
 
-            Version: `${{ needs.determine-builds.outputs.gatus_version }}`
+          ### Usage
+          \`\`\`bash
+          # Find the image in DigitalOcean custom images:
+          # nixos-foundry-YYYYMMDD-HHMMSS
 
-            Built from commit: ${{ github.sha }}
+          # Or deploy to existing droplet:
+          task nix-deploy-foundry
+          \`\`\`
 
-            ### Usage
-
-            ```bash
-            # Find the image in DigitalOcean custom images:
-            # nixos-gatus-YYYYMMDD-HHMMSS
-
-            # Or deploy to existing droplet:
-            task nix-deploy-gatus
-            ```
-          allowUpdates: true
-          makeLatest: false
-
-  # Create GitHub release for Foundry
-  release-foundry:
-    needs: [determine-builds, build-foundry]
-    if: needs.determine-builds.outputs.build_foundry == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: foundry-v${{ needs.determine-builds.outputs.foundry_version }}
-          name: Foundry VTT v${{ needs.determine-builds.outputs.foundry_version }}
-          body: |
-            ## Foundry VTT Image
-
-            Version: `${{ needs.determine-builds.outputs.foundry_version }}`
-
-            Built from commit: ${{ github.sha }}
-
-            ### Usage
-
-            ```bash
-            # Find the image in DigitalOcean custom images:
-            # nixos-foundry-YYYYMMDD-HHMMSS
-
-            # Or deploy to existing droplet:
-            task nix-deploy-foundry
-            ```
-
-            **Note**: Requires 50GB DigitalOcean block storage volume attached
-          allowUpdates: true
-          makeLatest: false
+          **Note**: Requires 50GB DigitalOcean block storage volume attached" || echo "Release may already exist"
+        env:
+          GH_TOKEN: ${{ github.token }}
