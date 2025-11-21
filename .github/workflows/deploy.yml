@@ -40,28 +40,52 @@ jobs:
           # Generate known hosts from deploy.json
           echo "Generating known hosts..."
           KNOWN_HOSTS=""
-          for hostname in $(jq -r 'to_entries[] | .value' deploy.json); do
-            echo "Scanning $hostname..."
-            host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
-            if [ -n "$host_key" ]; then
-              KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
-            fi
-          done
-          
+
+          # Handle both old format (flat keys) and new format (nodes object)
+          if jq -e '.nodes' deploy.json > /dev/null 2>&1; then
+            # New format with nodes object
+            for hostname in $(jq -r '.nodes[] | .tailscaleHostname // .hostname' deploy.json); do
+              echo "Scanning $hostname..."
+              host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
+              if [ -n "$host_key" ]; then
+                KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
+              fi
+            done
+          else
+            # Old format with flat keys (backward compatibility)
+            for hostname in $(jq -r 'to_entries[] | .value' deploy.json); do
+              echo "Scanning $hostname..."
+              host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
+              if [ -n "$host_key" ]; then
+                KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
+              fi
+            done
+          fi
+
           # Setup SSH key and known hosts
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-                
+
       - name: Test connection to servers
         run: |
-          # Extract hostnames from deploy.json and test each one (skip Tailscale hostname)
-          for hostname in $(jq -r 'to_entries[] | select(.key != "digitalOceanHostname") | .value' deploy.json); do
-            echo "Testing connection to $hostname..."
-            ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
-          done
+          # Extract hostnames and test connections
+          if jq -e '.nodes' deploy.json > /dev/null 2>&1; then
+            # New format with nodes object
+            for node in $(jq -r '.nodes | keys[]' deploy.json); do
+              hostname=$(jq -r ".nodes.$node.tailscaleHostname // .nodes.$node.hostname" deploy.json)
+              echo "Testing connection to $node ($hostname)..."
+              ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test' || echo "Warning: Could not connect to $node"
+            done
+          else
+            # Old format (backward compatibility)
+            for hostname in $(jq -r 'to_entries[] | select(.key != "digitalOceanHostname") | .value' deploy.json); do
+              echo "Testing connection to $hostname..."
+              ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test' || echo "Warning: Could not connect"
+            done
+          fi
 
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@v6

@@ -16,6 +16,31 @@
     };
 
     nixosConfigurations = {
+      # Gatus monitoring server configuration
+      gatus = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          inherit inputs nixpkgs;
+        };
+        modules = [
+          ./configuration-gatus.nix
+          ./hardware.nix
+        ];
+      };
+
+      # Foundry VTT server configuration
+      foundry = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          inherit inputs nixpkgs;
+        };
+        modules = [
+          ./configuration-foundry.nix
+          ./hardware.nix
+        ];
+      };
+
+      # Backward compatibility: digitalOcean points to gatus
       digitalOcean = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         specialArgs = {
@@ -24,12 +49,6 @@
         modules = [
           ./configuration.nix
           ./hardware.nix
-          # {
-          #   nixpkgs.crossSystem = {
-          #     config = "x86_64-unknown-linux-gnu";
-          #     system = "x86_64-linux";
-          #   };
-          # }
         ];
       };
     };
@@ -47,8 +66,29 @@
     };
     deploy = {
       nodes = {
+        # Gatus monitoring node
+        gatus = {
+          hostname = config.nodes.gatus.tailscaleHostname or config.digitalOceanTailscaleHostname;
+          profiles.system = {
+            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.gatus;
+            sshUser = "root";
+            remoteBuild = true;
+          };
+        };
+
+        # Foundry VTT node
+        foundry = {
+          hostname = config.nodes.foundry.tailscaleHostname or "";
+          profiles.system = {
+            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.foundry;
+            sshUser = "root";
+            remoteBuild = true;
+          };
+        };
+
+        # Backward compatibility
         digitalOcean = {
-          hostname = config.digitalOceanTailscaleHostname;
+          hostname = config.digitalOceanTailscaleHostname or config.nodes.gatus.tailscaleHostname;
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";

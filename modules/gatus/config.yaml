@@ -12,7 +12,21 @@ endpoints:
       "CF-Access-Client-Secret": "$CF_ACCESS_CLIENT_SECRET"
     alerts:
       - type: discord
-      
+
+  - name: foundryvtt
+    group: Live
+    url: https://foundry.syscd.live
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 2000"
+      - "[BODY] == pat(*<title>Argo CD</title>*)"
+    headers:
+      "CF-Access-Client-Id": "$CF_ACCESS_CLIENT_ID"
+      "CF-Access-Client-Secret": "$CF_ACCESS_CLIENT_SECRET"
+    alerts:
+      - type: discord 
+
   - name: Alertmanager
     group: Tech
     url: https://alertmanager.syscd.tech/-/healthy

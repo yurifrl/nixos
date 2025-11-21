@@ -4,14 +4,35 @@ dotenv: [.env]
 
 tasks:
   nix-build:
-    desc: Build the NixOS image
+    desc: Build both NixOS images (gatus and foundry)
     cmds:
-      - nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage --system x86_64-linux
+      - task: nix-build-gatus
+      - task: nix-build-foundry
+
+  nix-build-gatus:
+    desc: Build the Gatus monitoring image
+    cmds:
+      - nix build .#nixosConfigurations.gatus.config.system.build.digitalOceanImage --system x86_64-linux
+
+  nix-build-foundry:
+    desc: Build the Foundry VTT image
+    cmds:
+      - nix build .#nixosConfigurations.foundry.config.system.build.digitalOceanImage --system x86_64-linux
 
   nix-deploy:
-    desc: Deploy the NixOS image
+    desc: Deploy both NixOS configurations (gatus and foundry)
     cmds:
       - deploy path:.#
+
+  nix-deploy-gatus:
+    desc: Deploy only Gatus configuration
+    cmds:
+      - deploy path:.#gatus
+
+  nix-deploy-foundry:
+    desc: Deploy only Foundry configuration
+    cmds:
+      - deploy path:.#foundry
 
   load-envs:
     desc: Load environment variables
@@ -66,28 +87,62 @@ tasks:
         echo "deploy.json added to local git exclusion, (gambiarra to not commit deploy.json)"
 
   load-secrets:
-    desc: Load secrets from the ./secrets directory
+    desc: Load all secrets to both servers (alias for backward compatibility)
+    cmds:
+      - task: load-secrets-gatus
+      - task: load-secrets-foundry
+
+  load-secrets-gatus:
+    desc: Load Gatus server secrets
     dir: ./secrets
     cmds:
       - |
+        echo "Loading secrets for Gatus server..."
         op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-        op read "op://kubernetes/nixos/cloudflared-creds.json" -f -o cloudflared-creds.json
+        op read "op://kubernetes/nixos/gatus-cloudflared-creds.json" -f -o gatus-cloudflared-creds.json
         op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
 
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/gatus"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/gatus"
 
-        scp tailscale-auth.key {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
-        scp cloudflared-creds.json {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/cloudflared/config.json
-        scp gatus.env {{.DROPLET_USER}}@{{.DROPLET_IP}}:/etc/gatus/gatus.env
+        scp tailscale-auth.key {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
+        scp gatus-cloudflared-creds.json {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}:/etc/cloudflared/config.json
+        scp gatus.env {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}:/etc/gatus/gatus.env
 
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/cloudflared/config.json"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chmod 600 /etc/gatus/gatus.env"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chmod 600 /etc/cloudflared/config.json"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chmod 600 /etc/gatus/gatus.env"
 
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R gatus:gatus /etc/gatus"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chown -R gatus:gatus /etc/gatus"
+        ssh {{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
 
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/tailscale/tailscale-auth.key"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/cloudflared/config.json"
-        ssh {{.DROPLET_USER}}@{{.DROPLET_IP}} "cat /etc/gatus/gatus.env"
+        echo "✅ Gatus secrets loaded successfully"
+
+  load-secrets-foundry:
+    desc: Load Foundry server secrets
+    dir: ./secrets
+    cmds:
+      - |
+        echo "Loading secrets for Foundry server..."
+        op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
+        op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json
+        op read "op://kubernetes/nixos/foundry-license.key" -f -o foundry-license.key
+        op read "op://kubernetes/nixos/foundry-admin.key" -f -o foundry-admin.key
+
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "mkdir -p /etc/tailscale /etc/cloudflared /etc/foundry"
+
+        scp tailscale-auth.key {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/tailscale/tailscale-auth.key
+        scp foundry-cloudflared-tunnel.json {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/cloudflared/foundry-tunnel.json
+        scp foundry-license.key {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/foundry/license-key
+        scp foundry-admin.key {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}:/etc/foundry/admin-key
+
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/tailscale/tailscale-auth.key"
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/cloudflared/foundry-tunnel.json"
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/foundry/license-key"
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chmod 600 /etc/foundry/admin-key"
+
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chown -R tailscale:tailscale /etc/tailscale"
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chown -R cloudflared:cloudflared /etc/cloudflared"
+        ssh {{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}} "chown -R foundry:foundry /etc/foundry"
+
+        echo "✅ Foundry secrets loaded successfully"

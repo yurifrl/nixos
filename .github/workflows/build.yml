@@ -1,17 +1,82 @@
-name: "🏗️ Build NixOS Image"
+name: "🏗️ Build NixOS Images"
 
 on:
   push:
     tags:
       - '*'
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      force_build:
+        description: 'Force build all images'
+        required: false
+        default: 'false'
 
 jobs:
+  # Detect which images need to be built based on changed files
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      gatus: ${{ steps.filter.outputs.gatus }}
+      foundry: ${{ steps.filter.outputs.foundry }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for change detection
+
+      - name: Detect changed files
+        id: filter
+        run: |
+          # On tag push or manual dispatch with force_build, build everything
+          if [[ "${{ github.ref_type }}" == "tag" ]] || [[ "${{ github.event.inputs.force_build }}" == "true" ]]; then
+            echo "gatus=true" >> $GITHUB_OUTPUT
+            echo "foundry=true" >> $GITHUB_OUTPUT
+            echo "shared=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} || echo "")
+
+          # Check for changes in shared modules (affects both images)
+          if echo "$CHANGED_FILES" | grep -q "modules/shared/\|configuration-base.nix\|hardware.nix\|flake.nix"; then
+            echo "gatus=true" >> $GITHUB_OUTPUT
+            echo "foundry=true" >> $GITHUB_OUTPUT
+            echo "shared=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check for Gatus-specific changes
+          if echo "$CHANGED_FILES" | grep -q "modules/gatus/\|configuration-gatus.nix"; then
+            echo "gatus=true" >> $GITHUB_OUTPUT
+          else
+            echo "gatus=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check for Foundry-specific changes
+          if echo "$CHANGED_FILES" | grep -q "modules/foundry/\|configuration-foundry.nix"; then
+            echo "foundry=true" >> $GITHUB_OUTPUT
+          else
+            echo "foundry=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: detect-changes
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
       id-token: 'write'
+
+    strategy:
+      matrix:
+        image: [gatus, foundry]
+
+    # Skip job if image doesn't need rebuilding
+    if: |
+      (matrix.image == 'gatus' && needs.detect-changes.outputs.gatus == 'true') ||
+      (matrix.image == 'foundry' && needs.detect-changes.outputs.foundry == 'true')
 
     steps:
       - uses: actions/checkout@v4
@@ -35,10 +100,10 @@ jobs:
       - name: Create deploy.json
         run: |
           printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
-      
-      - name: Build NixOS Image
+
+      - name: Build NixOS Image (${{ matrix.image }})
         run: |
-          nix build .#nixosConfigurations.digitalOcean.config.system.build.digitalOceanImage
+          nix build .#nixosConfigurations.${{ matrix.image }}.config.system.build.digitalOceanImage
 
       - name: Google Auth
         id: auth
@@ -60,33 +125,33 @@ jobs:
 
       - name: Upload to GCS and create image
         run: |
-          # Generate image name with timestamp
-          NIXOS_IMAGE_NAME="nixos-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
+          # Generate image name with timestamp and image type
+          NIXOS_IMAGE_NAME="nixos-${{ matrix.image }}-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
           echo "NIXOS_IMAGE_NAME=$NIXOS_IMAGE_NAME" >> $GITHUB_ENV
-          
+
           # Copy the qcow2.bz2 file with a simple name
-          cp result/*qcow2.bz2 nixos.qcow2.bz2
-          
-          if [ ! -f nixos.qcow2.bz2 ]; then
+          cp result/*qcow2.bz2 nixos-${{ matrix.image }}.qcow2.bz2
+
+          if [ ! -f nixos-${{ matrix.image }}.qcow2.bz2 ]; then
             echo "Error: Failed to copy nixos image file"
             ls -la result/
             exit 1
           fi
-          
-          echo "Found image file: nixos.qcow2.bz2"
+
+          echo "Found image file: nixos-${{ matrix.image }}.qcow2.bz2"
           echo "NIXOS_IMAGE_NAME: $NIXOS_IMAGE_NAME"
           echo "GCS Bucket: ${{ secrets.GCS_BUCKET_NAME }}"
-          
+
           # Upload to GCS with public access
-          gsutil cp -v nixos.qcow2.bz2 "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
-          
+          gsutil cp -v nixos-${{ matrix.image }}.qcow2.bz2 "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
+
           if [ $? -ne 0 ]; then
             echo "Error: Failed to upload to GCS"
             exit 1
           fi
-          
+
           gsutil acl ch -u AllUsers:R "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
-          
+
           # Get the public URL
           IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME"
           echo "::add-mask::$IMAGE_URL"
@@ -102,11 +167,12 @@ jobs:
           doctl compute image create "$NIXOS_IMAGE_NAME" \
             --region nyc1 \
             --image-url "$IMAGE_URL" \
-            --image-description "NixOS image built on $(date +%Y-%m-%d)"
+            --image-description "NixOS ${{ matrix.image }} image built on $(date +%Y-%m-%d)"
 
       - name: Get Artifact Information
         run: |
-          echo "✓ Process completed successfully"
+          echo "✓ Process completed successfully for ${{ matrix.image }} image"
           echo "→ Custom image will be available at: https://cloud.digitalocean.com/images/custom_images"
+          echo "→ Image name: $NIXOS_IMAGE_NAME"
 
           
