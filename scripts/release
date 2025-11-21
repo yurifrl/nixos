@@ -297,9 +297,47 @@ def main():
     ))
 
 
+def quick_release():
+    """Quick patch release without interactive prompts."""
+    console.print("[bold cyan]⚡ Quick Release (Patch Bump)[/bold cyan]\n")
+
+    # Choose image(s)
+    images = questionary.checkbox(
+        "Which image(s) to release?",
+        choices=[
+            questionary.Choice("📊 Gatus", value="gatus"),
+            questionary.Choice("🎮 Foundry", value="foundry"),
+        ],
+        style=custom_style,
+    ).ask()
+
+    if not images:
+        console.print("[yellow]No images selected.[/yellow]")
+        sys.exit(0)
+
+    for image in images:
+        current = read_version(image)
+        new = bump_version(current, 'patch')
+
+        console.print(f"[cyan]{image}:[/cyan] {current} → {new}")
+        write_version(image, new)
+
+        # Generate changelog
+        status, diff = get_git_changes()
+        changelog = generate_ai_changelog(image, new, status, diff) if diff else "- Patch release"
+
+        # Commit and push
+        commit_and_push(image, new, changelog, push=True)
+
+    console.print("\n[green]✅ Quick release complete![/green]")
+
+
 if __name__ == "__main__":
     try:
-        main()
+        if "--quick" in sys.argv:
+            quick_release()
+        else:
+            main()
     except KeyboardInterrupt:
         console.print("\n[yellow]⚠️  Cancelled by user[/yellow]")
         sys.exit(0)
