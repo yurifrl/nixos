@@ -127,8 +127,7 @@ def commit_and_push(image: str, version: str, changelog: str, push: bool) -> Non
     run_cmd(f"git add {image}.version")
     run_cmd("git add -u")
 
-    # Commit
-    run_cmd(f"git commit -m {questionary.text('').unsafe_ask()}", capture=False)  # Will use heredoc
+    # Commit with generated changelog
     with open('/tmp/commit_msg', 'w') as f:
         f.write(commit_msg)
     run_cmd("git commit -F /tmp/commit_msg")

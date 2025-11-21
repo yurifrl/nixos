@@ -1,0 +1,14 @@
+{
+  "nodes": {
+    "gatus": {
+      "hostname": "142.93.206.108",
+      "tailscaleHostname": "digitalocean-nixos-01.tailcecc0.ts.net",
+      "sshUser": "root"
+    },
+    "foundry": {
+      "hostname": "FOUNDRY-IP-PLACEHOLDER",
+      "tailscaleHostname": "rpg.tailcecc0.ts.net",
+      "sshUser": "root"
+    }
+  }
+}

@@ -36,6 +36,8 @@ jobs:
 
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+        with:
+          flakehub: false
 
       - name: Enable Nix Flakes
         run: |
