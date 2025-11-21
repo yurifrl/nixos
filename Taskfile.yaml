@@ -8,6 +8,11 @@ tasks:
     cmds:
       - ./scripts/release
 
+  quick-release:
+    desc: ⚡ Quick patch release - auto-bump patch version and push
+    cmds:
+      - ./scripts/release --quick
+
   nix:build:
     desc: Build both NixOS images (gatus and foundry)
     cmds:

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'gatus.version'
+      - 'foundry.version'
   workflow_dispatch:
     inputs:
       target:
@@ -17,11 +20,22 @@ on:
           - foundry
 
 jobs:
-  # Deploy to all nodes or specific node
   deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [gatus, foundry]
+      fail-fast: false  # Continue deploying other nodes if one fails
+
+    # Skip node if manual dispatch targets a specific one
+    if: |
+      github.event.inputs.target == 'all' ||
+      github.event.inputs.target == '' ||
+      github.event.inputs.target == matrix.node
+
     uses: ./.github/workflows/_deploy-node.yml
     with:
-      node_name: ${{ github.event.inputs.target || 'all' }}
+      node_name: ${{ matrix.node }}
     secrets:
       TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
       TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}

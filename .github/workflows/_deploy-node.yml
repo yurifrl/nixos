@@ -69,20 +69,11 @@ jobs:
           echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Test connection to servers
+      - name: Test connection to server
         run: |
-          echo "🧪 Testing connections..."
-          for node in $(jq -r '.nodes | keys[]' deploy.json); do
-            # Skip nodes not being deployed
-            if [[ "${{ inputs.node_name }}" != "all" ]] && [[ "${{ inputs.node_name }}" != "$node" ]]; then
-              echo "⏭️  Skipping $node (not selected for deployment)"
-              continue
-            fi
-
-            hostname=$(jq -r ".nodes.$node.tailscaleHostname // .nodes.$node.hostname" deploy.json)
-            echo "🔌 Testing connection to $node ($hostname)..."
-            ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test' || echo "⚠️  Warning: Could not connect to $node"
-          done
+          echo "🧪 Testing connection to ${{ inputs.node_name }}..."
+          hostname=$(jq -r ".nodes.${{ inputs.node_name }}.tailscaleHostname // .nodes.${{ inputs.node_name }}.hostname" deploy.json)
+          ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
 
       - name: Cache Nix store
         uses: nix-community/cache-nix-action@v6
@@ -97,13 +88,8 @@ jobs:
 
       - name: Run deployment
         run: |
-          if [[ "${{ inputs.node_name }}" == "all" ]]; then
-            echo "🚀 Deploying to all nodes..."
-            deploy path:.#
-          else
-            echo "🚀 Deploying to ${{ inputs.node_name }}..."
-            deploy path:.#${{ inputs.node_name }}
-          fi
+          echo "🚀 Deploying to ${{ inputs.node_name }}..."
+          deploy path:.#${{ inputs.node_name }}
 
       - name: Deployment Summary
         run: |
