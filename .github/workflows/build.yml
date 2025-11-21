@@ -1,12 +1,11 @@
-name: "<� Build & Release NixOS Images"
+name: "🏗️ Build & Release"
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'gatus.version'
-      - 'foundry.version'
+      - '*.version'
   workflow_dispatch:
 
 permissions:
@@ -21,26 +20,17 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check if should build
+      - name: Check
         id: check
         run: |
-          # Always build on manual dispatch
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "build=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Check if gatus.version changed
-          CHANGED=$(git diff --name-only HEAD~1 HEAD)
-          if echo "$CHANGED" | grep -q "gatus.version"; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || git diff --name-only HEAD~1 HEAD | grep -q "gatus.version"; then
             echo "build=true" >> $GITHUB_OUTPUT
           else
             echo "build=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and upload
+      - uses: ./.github/actions/build-image
         if: steps.check.outputs.build == 'true'
-        uses: ./.github/actions/build-image
         with:
           image-name: gatus
         env:
@@ -51,22 +41,11 @@ jobs:
           GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Create release
+      - name: Release
         if: steps.check.outputs.build == 'true'
         run: |
-          VERSION=$(cat gatus.version)
-          gh release create "gatus-v${VERSION}" \
-            --title "Gatus v${VERSION}" \
-            --notes "## Gatus Monitoring Image
-
-          Version: \`${VERSION}\`
-          Built from commit: ${{ github.sha }}
-
-          ### Usage
-          \`\`\`bash
-          # nixos-gatus-YYYYMMDD-HHMMSS
-          task nix-deploy-gatus
-          \`\`\`" || echo "Release exists"
+          V=$(cat gatus.version)
+          gh release create "gatus-v${V}" --title "Gatus v${V}" --notes "Built from ${{ github.sha }}" || true
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -77,26 +56,17 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check if should build
+      - name: Check
         id: check
         run: |
-          # Always build on manual dispatch
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "build=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Check if foundry.version changed
-          CHANGED=$(git diff --name-only HEAD~1 HEAD)
-          if echo "$CHANGED" | grep -q "foundry.version"; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || git diff --name-only HEAD~1 HEAD | grep -q "foundry.version"; then
             echo "build=true" >> $GITHUB_OUTPUT
           else
             echo "build=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and upload
+      - uses: ./.github/actions/build-image
         if: steps.check.outputs.build == 'true'
-        uses: ./.github/actions/build-image
         with:
           image-name: foundry
         env:
@@ -107,23 +77,10 @@ jobs:
           GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
           DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Create release
+      - name: Release
         if: steps.check.outputs.build == 'true'
         run: |
-          VERSION=$(cat foundry.version)
-          gh release create "foundry-v${VERSION}" \
-            --title "Foundry VTT v${VERSION}" \
-            --notes "## Foundry VTT Image
-
-          Version: \`${VERSION}\`
-          Built from commit: ${{ github.sha }}
-
-          ### Usage
-          \`\`\`bash
-          # nixos-foundry-YYYYMMDD-HHMMSS
-          task nix-deploy-foundry
-          \`\`\`
-
-          **Note**: Requires 50GB volume" || echo "Release exists"
+          V=$(cat foundry.version)
+          gh release create "foundry-v${V}" --title "Foundry v${V}" --notes "Built from ${{ github.sha }}" || true
         env:
           GH_TOKEN: ${{ github.token }}
