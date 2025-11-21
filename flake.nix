@@ -49,7 +49,7 @@
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.gatus;
             sshUser = "root";
-            remoteBuild = false;
+            remoteBuild = true;
           };
         };
 
@@ -59,14 +59,13 @@
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.foundry;
             sshUser = "root";
-            remoteBuild = false;
+            remoteBuild = true;
           };
         };
       };
     };
 
-    # Disabled checks causing .drv path issues
-    # checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
+    checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
 
     devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
       buildInputs = with nixpkgs.legacyPackages.x86_64-linux; [ openssh ];

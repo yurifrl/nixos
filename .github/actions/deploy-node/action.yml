@@ -71,17 +71,11 @@ runs:
       shell: bash
       run: nix profile install nixpkgs#deploy-rs
 
-    - name: Build configuration locally
-      shell: bash
-      run: |
-        echo "🔨 Building ${{ inputs.node-name }} configuration..."
-        nix build .#nixosConfigurations.${{ inputs.node-name }}.config.system.build.toplevel
-
     - name: Run deployment
       shell: bash
       run: |
         echo "🚀 Deploying to ${{ inputs.node-name }}..."
-        deploy --skip-checks -- --option substitute false path:.#${{ inputs.node-name }}
+        deploy path:.#${{ inputs.node-name }}
 
     - name: Deployment Summary
       shell: bash
