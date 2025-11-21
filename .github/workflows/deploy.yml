@@ -32,7 +32,7 @@ jobs:
       github.event.inputs.target == '' ||
       github.event.inputs.target == matrix.node
 
-    uses: ./.github/workflows/lib/_deploy-node.yml
+    uses: ./.github/workflows/_deploy-node.yml
     with:
       node_name: ${{ matrix.node }}
     secrets:

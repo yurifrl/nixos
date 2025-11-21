@@ -79,7 +79,7 @@ jobs:
   build-gatus:
     needs: determine-builds
     if: needs.determine-builds.outputs.build_gatus == 'true'
-    uses: ./.github/workflows/lib/_build-image.yml
+    uses: ./.github/workflows/_build-image.yml
     with:
       image_name: gatus
     secrets: inherit
@@ -91,7 +91,7 @@ jobs:
   build-foundry:
     needs: determine-builds
     if: needs.determine-builds.outputs.build_foundry == 'true'
-    uses: ./.github/workflows/lib/_build-image.yml
+    uses: ./.github/workflows/_build-image.yml
     with:
       image_name: foundry
     secrets: inherit
