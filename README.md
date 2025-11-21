@@ -103,14 +103,17 @@ task nix:deploy:foundry
 
 ### Version Management
 
+**Interactive (Recommended)** - Beautiful TUI with step-by-step flow:
 ```bash
-# Release new version with AI-generated changelog
+task deploy
+```
+
+**Non-interactive** - For scripts/automation:
+```bash
 IMAGE=gatus task release                    # Patch bump (default)
 IMAGE=foundry BUMP_TYPE=minor task release  # Minor bump
 IMAGE=gatus BUMP_TYPE=major task release    # Major bump
-
-# Commit locally without pushing (review changelog first)
-IMAGE=foundry PUSH=false task release
+IMAGE=foundry PUSH=false task release       # Don't push
 ```
 
 ## Setup New Machines
@@ -313,40 +316,33 @@ task nix:deploy:gatus
 
 **For image updates** (requires rebuild):
 ```bash
-# Make changes to modules
-vim modules/foundry/default.nix
-
-# Release with AI-generated changelog (bumps version, commits, pushes)
-IMAGE=foundry task release
-
-# GitHub Actions will automatically build and create release
-# Then deploy the new configuration
-task nix:deploy:foundry
-```
-
-**Advanced release options**:
-```bash
-# Review changelog before pushing
-IMAGE=gatus PUSH=false task release
-# Review the commit, then manually push:
-git push
-
-# Different bump types
-IMAGE=foundry BUMP_TYPE=minor task release  # 1.0.0 → 1.1.0
-IMAGE=gatus BUMP_TYPE=major task release    # 1.0.0 → 2.0.0
-```
-
-**Complete workflow example**:
-```bash
 # 1. Make changes
 vim modules/foundry/default.nix
 
-# 2. Release (bump, AI changelog, commit, push)
-IMAGE=foundry task release
+# 2. Interactive release (beautiful TUI!)
+task deploy
+#   → Select: Foundry VTT
+#   → Choose: Patch/Minor/Major
+#   → AI generates changelog
+#   → Review and confirm
+#   → Commits and pushes
 
-# 3. Wait for GitHub Actions to build (~5-10 min)
-# 4. Deploy new config to running server
+# 3. GitHub Actions builds (~5-10 min)
+# 4. Deploy to server
 task nix:deploy:foundry
+```
+
+**Non-interactive workflow** (for automation):
+```bash
+# Make changes
+vim modules/gatus/config.yaml
+
+# Release with one command
+IMAGE=gatus task release
+
+# Or with options
+IMAGE=foundry BUMP_TYPE=minor task release
+IMAGE=gatus PUSH=false task release  # Review first
 ```
 
 ### Adding New Services

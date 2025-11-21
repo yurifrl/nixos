@@ -1,0 +1,309 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "click",
+#     "rich",
+#     "questionary",
+# ]
+# ///
+"""
+🚀 NixOS Image Release Tool
+
+Interactive CLI for releasing NixOS images with AI-generated changelogs.
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+from typing import Optional
+
+import questionary
+from questionary import Style
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+
+# Custom charmbracelet-inspired style
+custom_style = Style([
+    ('qmark', 'fg:#ff79c6 bold'),           # Pink question mark
+    ('question', 'fg:#f8f8f2 bold'),        # White question
+    ('answer', 'fg:#8be9fd bold'),          # Cyan answer
+    ('pointer', 'fg:#ff79c6 bold'),         # Pink pointer
+    ('highlighted', 'fg:#8be9fd bold'),     # Cyan highlight
+    ('selected', 'fg:#50fa7b'),             # Green selected
+    ('separator', 'fg:#6272a4'),            # Gray separator
+    ('instruction', 'fg:#6272a4'),          # Gray instruction
+])
+
+console = Console()
+
+
+def run_cmd(cmd: str, capture: bool = True) -> str:
+    """Run shell command and return output."""
+    result = subprocess.run(
+        cmd,
+        shell=True,
+        capture_output=capture,
+        text=True,
+    )
+    if result.returncode != 0 and capture:
+        console.print(f"[red]❌ Command failed:[/red] {cmd}")
+        console.print(f"[red]{result.stderr}[/red]")
+        sys.exit(1)
+    return result.stdout.strip() if capture else ""
+
+
+def read_version(image: str) -> str:
+    """Read current version from file."""
+    version_file = Path(f"{image}.version")
+    if not version_file.exists():
+        console.print(f"[red]❌ Error: {version_file} not found[/red]")
+        sys.exit(1)
+    return version_file.read_text().strip()
+
+
+def bump_version(current: str, bump_type: str) -> str:
+    """Calculate new version based on bump type."""
+    major, minor, patch = map(int, current.split('.'))
+
+    if bump_type == 'major':
+        return f"{major + 1}.0.0"
+    elif bump_type == 'minor':
+        return f"{major}.{minor + 1}.0"
+    else:  # patch
+        return f"{major}.{minor}.{patch + 1}"
+
+
+def write_version(image: str, version: str) -> None:
+    """Write version to file."""
+    version_file = Path(f"{image}.version")
+    version_file.write_text(f"{version}\n")
+
+
+def get_git_changes() -> tuple[str, str]:
+    """Get git status and diff."""
+    status = run_cmd("git status --short")
+    diff = run_cmd("git diff HEAD")
+    return status, diff
+
+
+def generate_changelog(image: str, version: str, status: str, diff: str) -> Optional[str]:
+    """Generate changelog using Claude CLI."""
+    prompt = f"""Generate a concise changelog for this NixOS {image} image release.
+
+New version: {version}
+
+Recent changes:
+{status}
+
+Diff:
+{diff}
+
+Format:
+- Use conventional commits style
+- Be specific about what changed
+- 2-3 bullet points maximum
+- No markdown formatting
+- Start each line with "- "
+"""
+
+    try:
+        changelog = run_cmd(f"claude --no-color <<'EOF'\n{prompt}\nEOF")
+        return changelog.strip()
+    except Exception as e:
+        console.print(f"[yellow]⚠️  Failed to generate changelog: {e}[/yellow]")
+        return None
+
+
+def commit_and_push(image: str, version: str, changelog: str, push: bool) -> None:
+    """Commit changes and optionally push."""
+    commit_msg = f"""chore({image}): bump to v{version}
+
+{changelog}"""
+
+    # Stage changes
+    run_cmd(f"git add {image}.version")
+    run_cmd("git add -u")
+
+    # Commit
+    run_cmd(f"git commit -m {questionary.text('').unsafe_ask()}", capture=False)  # Will use heredoc
+    with open('/tmp/commit_msg', 'w') as f:
+        f.write(commit_msg)
+    run_cmd("git commit -F /tmp/commit_msg")
+
+    console.print(f"\n[green]✅ Committed[/green]")
+
+    if push:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            progress.add_task("🚀 Pushing to GitHub...", total=None)
+            run_cmd("git push", capture=False)
+
+        console.print(f"\n[green]✅ Pushed to GitHub![/green]")
+        console.print(f"[cyan]🔗 Watch build: https://github.com/yurifrl/nixos/actions[/cyan]")
+    else:
+        console.print(f"\n[yellow]📝 Changes committed locally (not pushed)[/yellow]")
+        console.print("[dim]Run 'git push' when ready to trigger build[/dim]")
+
+
+def main():
+    """Main interactive flow."""
+    console.clear()
+
+    # Welcome banner
+    console.print(Panel.fit(
+        "[bold cyan]🚀 NixOS Image Release Tool[/bold cyan]\n"
+        "[dim]Interactive deployment with AI-powered changelogs[/dim]",
+        border_style="cyan"
+    ))
+    console.print()
+
+    # Step 1: Choose image(s)
+    images = questionary.checkbox(
+        "Which image(s) do you want to release?",
+        choices=[
+            questionary.Choice("📊 Gatus (monitoring)", value="gatus"),
+            questionary.Choice("🎮 Foundry VTT (game server)", value="foundry"),
+        ],
+        style=custom_style,
+    ).ask()
+
+    if not images:
+        console.print("[yellow]No images selected. Exiting.[/yellow]")
+        sys.exit(0)
+
+    # Process each image
+    for image in images:
+        console.print(f"\n[bold magenta]{'='*60}[/bold magenta]")
+        console.print(f"[bold cyan]📦 Releasing: {image}[/bold cyan]")
+        console.print(f"[bold magenta]{'='*60}[/bold magenta]\n")
+
+        current_version = read_version(image)
+        console.print(f"[dim]Current version:[/dim] [yellow]{current_version}[/yellow]")
+
+        # Step 2: Choose version bump or custom
+        version_choice = questionary.select(
+            f"How do you want to bump {image} version?",
+            choices=[
+                questionary.Choice(f"🔹 Patch ({current_version} → {bump_version(current_version, 'patch')})", value='patch'),
+                questionary.Choice(f"🔸 Minor ({current_version} → {bump_version(current_version, 'minor')})", value='minor'),
+                questionary.Choice(f"🔶 Major ({current_version} → {bump_version(current_version, 'major')})", value='major'),
+                questionary.Choice("✏️  Custom version", value='custom'),
+            ],
+            style=custom_style,
+        ).ask()
+
+        if version_choice == 'custom':
+            new_version = questionary.text(
+                "Enter custom version (e.g., 2.1.0):",
+                default=current_version,
+                style=custom_style,
+            ).ask()
+        else:
+            new_version = bump_version(current_version, version_choice)
+
+        console.print(f"[green]✅ New version:[/green] [bold green]{new_version}[/bold green]\n")
+        write_version(image, new_version)
+
+        # Step 3: Generate changelog
+        status, diff = get_git_changes()
+
+        if not diff:
+            console.print("[yellow]⚠️  No changes detected in git diff[/yellow]")
+            changelog = questionary.text(
+                "Enter changelog manually:",
+                multiline=True,
+                style=custom_style,
+            ).ask()
+        else:
+            use_ai = questionary.confirm(
+                "Generate changelog with AI?",
+                default=True,
+                style=custom_style,
+            ).ask()
+
+            if use_ai:
+                with Progress(
+                    SpinnerColumn(),
+                    TextColumn("[progress.description]{task.description}"),
+                    console=console,
+                ) as progress:
+                    progress.add_task("🤖 Generating changelog with AI...", total=None)
+                    changelog = generate_changelog(image, new_version, status, diff)
+
+                if changelog:
+                    console.print("\n[bold]📝 Generated Changelog:[/bold]")
+                    console.print(Panel(changelog, border_style="green"))
+
+                    accept = questionary.confirm(
+                        "Use this changelog?",
+                        default=True,
+                        style=custom_style,
+                    ).ask()
+
+                    if not accept:
+                        changelog = questionary.text(
+                            "Enter custom changelog:",
+                            default=changelog,
+                            multiline=True,
+                            style=custom_style,
+                        ).ask()
+                else:
+                    console.print("[yellow]⚠️  AI generation failed[/yellow]")
+                    changelog = questionary.text(
+                        "Enter changelog manually:",
+                        multiline=True,
+                        style=custom_style,
+                    ).ask()
+            else:
+                changelog = questionary.text(
+                    "Enter changelog manually:",
+                    multiline=True,
+                    style=custom_style,
+                ).ask()
+
+        # Step 4: Review and confirm
+        console.print("\n[bold]📋 Release Summary:[/bold]")
+        table = Table(show_header=False, box=None, padding=(0, 2))
+        table.add_row("[cyan]Image:[/cyan]", f"[bold]{image}[/bold]")
+        table.add_row("[cyan]Version:[/cyan]", f"[yellow]{current_version}[/yellow] → [green]{new_version}[/green]")
+        table.add_row("[cyan]Changelog:[/cyan]", changelog)
+        console.print(table)
+        console.print()
+
+        push = questionary.confirm(
+            "Commit and push to GitHub?",
+            default=True,
+            style=custom_style,
+        ).ask()
+
+        # Execute
+        commit_and_push(image, new_version, changelog, push)
+
+        if len(images) > 1:
+            console.print(f"\n[dim]{'─'*60}[/dim]")
+
+    # Final summary
+    console.print("\n" + "="*60)
+    console.print(Panel.fit(
+        "[bold green]✨ Release Complete![/bold green]\n\n"
+        f"[cyan]Released:[/cyan] {', '.join(images)}\n"
+        "[dim]GitHub Actions will build and create releases[/dim]",
+        border_style="green"
+    ))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        console.print("\n[yellow]⚠️  Cancelled by user[/yellow]")
+        sys.exit(0)
+    except Exception as e:
+        console.print(f"\n[red]❌ Error: {e}[/red]")
+        sys.exit(1)

@@ -8,8 +8,13 @@ vars:
   PUSH: '{{.PUSH | default "true"}}'
 
 tasks:
+  deploy:
+    desc: 🚀 Interactive release with beautiful TUI (charm-style CLI)
+    cmds:
+      - ./scripts/deploy
+
   release:
-    desc: Release new image version with AI changelog (IMAGE=gatus|foundry BUMP_TYPE=patch|minor|major PUSH=true|false)
+    desc: Non-interactive release (IMAGE=gatus|foundry BUMP_TYPE=patch|minor|major PUSH=true|false)
     cmds:
       - ./scripts/release.sh {{.IMAGE}} {{.BUMP_TYPE}} {{.PUSH}}
 
