@@ -78,23 +78,31 @@ Create the following items in your `kubernetes/nixos` vault:
 2. **foundry-admin.key** - Admin password for Foundry setup
 3. **foundry-cloudflared-tunnel.json** - Cloudflare tunnel credentials JSON
 
-### 5. Create DigitalOcean Droplet
+### 5. Build Foundry Image
 
 ```bash
-# Build the Foundry image
-task nix-build-foundry
+# Bump Foundry version to trigger build + release
+echo "1.0.0" > foundry.version
+git add foundry.version
+git commit -m "chore: initial foundry release v1.0.0"
+git push
 
-# Upload to GCS and create DO custom image (via GitHub Actions)
-git tag foundry-v1.0.0
-git push origin foundry-v1.0.0
+# GitHub Actions will automatically:
+# 1. Build nixos-foundry-YYYYMMDD-HHMMSS image
+# 2. Upload to DigitalOcean custom images
+# 3. Create GitHub release: foundry-v1.0.0
+```
 
+### 6. Create DigitalOcean Droplet
+
+```bash
 # Create droplet from custom image in DO dashboard
 # - Select the "nixos-foundry-YYYYMMDD-HHMMSS" custom image
 # - Choose size: at least 2GB RAM recommended
 # - Add your SSH key
 ```
 
-### 6. Create and Attach Block Storage
+### 7. Create and Attach Block Storage
 
 ```bash
 # In DigitalOcean dashboard or via doctl:
@@ -110,7 +118,7 @@ doctl compute volume-action attach <volume-id> <droplet-id>
 **Important**: The volume will be attached as `/dev/disk/by-id/scsi-0DO_Volume_foundry-data`.
 This path is already configured in `configuration-foundry.nix`.
 
-### 7. Update deploy.json
+### 8. Update deploy.json
 
 Add Foundry node configuration:
 
@@ -133,7 +141,7 @@ Add Foundry node configuration:
 
 Save to 1Password: `op://kubernetes/nixos/deploy.json`
 
-### 8. Load Secrets and Deploy
+### 9. Load Secrets and Deploy
 
 ```bash
 # Load build secrets

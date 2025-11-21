@@ -41,6 +41,8 @@ Both services share common infrastructure (SSH, Tailscale VPN) but are deployed 
 
 ```
 .
+├── gatus.version               # Gatus image version
+├── foundry.version             # Foundry image version
 ├── modules/
 │   ├── shared/                 # Shared infrastructure
 │   │   ├── ssh.nix            # SSH configuration
@@ -57,9 +59,8 @@ Both services share common infrastructure (SSH, Tailscale VPN) but are deployed 
 ├── configuration-foundry.nix   # Foundry-specific config
 ├── flake.nix                   # Nix flake with both images
 ├── .github/workflows/
-│   ├── build.yml              # Main build workflow
-│   ├── deploy.yml             # Main deploy workflow
-│   ├── _detect-changes.yml    # Reusable: change detection
+│   ├── build.yml              # Main: build & release
+│   ├── deploy.yml             # Main: deploy
 │   ├── _build-image.yml       # Reusable: build single image
 │   └── _deploy-node.yml       # Reusable: deploy to node(s)
 ├── docs/
@@ -104,21 +105,32 @@ task nix-deploy-foundry
 
 ### 1. Build Custom Images
 
-Images are built automatically via GitHub Actions:
+Images are built automatically when you bump version files:
 
 ```bash
-# Push a tag to build both images
-git tag v1.0.0
-git push origin v1.0.0
+# Bump Gatus version
+echo "1.0.1" > gatus.version
+git add gatus.version
+git commit -m "chore: bump gatus to v1.0.1"
+git push
 
-# Or manually trigger build workflow
-# Go to Actions → Build NixOS Images → Run workflow
+# Bump Foundry version
+echo "1.0.1" > foundry.version
+git add foundry.version
+git commit -m "chore: bump foundry to v1.0.1"
+git push
 ```
 
-The workflow uses intelligent change detection:
-- Changes to `modules/shared/` rebuild **both** images
-- Changes to `modules/gatus/` rebuild **only Gatus**
-- Changes to `modules/foundry/` rebuild **only Foundry**
+**Automatic triggers**:
+- Change to `gatus.version` → builds Gatus image → creates `gatus-v1.0.1` release
+- Change to `foundry.version` → builds Foundry image → creates `foundry-v1.0.1` release
+- Changes to any `.nix` or `modules/` files → rebuilds, but no new release
+
+**Manual build**:
+```bash
+# Go to Actions → Build & Release NixOS Images → Run workflow
+# Choose: all, gatus, or foundry
+```
 
 ### 2. Create Droplets
 
@@ -278,19 +290,43 @@ nixos-rebuild build-vm --flake .#gatus
 
 ### Modifying Configurations
 
-1. Make changes to modules
-2. Test build locally
-3. Commit and push (builds only changed images)
-4. Deploy via task or GitHub Actions
+**For configuration changes** (no new image needed):
+```bash
+# Make changes to modules
+vim modules/gatus/config.yaml
+
+# Deploy directly (no rebuild needed)
+task nix-deploy-gatus
+```
+
+**For image updates** (requires rebuild):
+```bash
+# Make changes to modules
+vim modules/foundry/default.nix
+
+# Bump version to trigger build
+echo "1.0.2" > foundry.version
+
+# Commit and push
+git add foundry.version modules/foundry/default.nix
+git commit -m "feat: update foundry configuration"
+git push
+
+# GitHub Actions will build and create release
+# Then deploy the new configuration
+task nix-deploy-foundry
+```
 
 ### Adding New Services
 
-1. Create module in `modules/<service>/`
-2. Create configuration in `configuration-<service>.nix`
-3. Add to `flake.nix` nixosConfigurations
-4. Update GitHub Actions matrix
-5. Add deployment node to `deploy.json`
-6. Document in `docs/<SERVICE>.md`
+1. Create `<service>.version` file (e.g., `echo "1.0.0" > myapp.version`)
+2. Create module in `modules/<service>/`
+3. Create configuration in `configuration-<service>.nix`
+4. Add to `flake.nix` nixosConfigurations
+5. Update `build.yml` to include new image in workflow
+6. Add deployment node to `deploy.json`
+7. Create secrets in 1Password
+8. Document in `docs/<SERVICE>.md`
 
 ## Troubleshooting
 
@@ -342,28 +378,30 @@ ssh root@<hostname> iptables -L -n -v
 
 ### GitHub Actions Workflows
 
-The repository uses **reusable workflows** for clean separation of concerns:
+The repository uses **version-based releases** with **reusable workflows**:
+
+**Version Control**:
+- `gatus.version` - Gatus image version (bump to trigger build + release)
+- `foundry.version` - Foundry image version (bump to trigger build + release)
 
 **Main Workflows**:
-- `build.yml` - Orchestrates building images (calls reusable workflows)
-- `deploy.yml` - Orchestrates deployments (calls reusable workflows)
+- `build.yml` - Detects version changes, builds images, creates releases
+- `deploy.yml` - Deploys to specified nodes via Tailscale
 
 **Reusable Library Workflows** (prefixed with `_`):
-- `_detect-changes.yml` - Analyzes git diff to determine which images need rebuilding
 - `_build-image.yml` - Builds a single NixOS image and uploads to DO
 - `_deploy-node.yml` - Deploys configuration to specified node(s)
 
-**Build Workflow**:
-- Triggers: tag push, main branch push, manual dispatch
-- Change detection: Only builds images with modified files
-- Matrix build: Runs `gatus` and `foundry` builds in parallel
-- Output: DigitalOcean custom images uploaded to GCS
+**How it works**:
+1. Change `gatus.version` or `foundry.version` and push to main
+2. GitHub Actions automatically builds the changed image(s)
+3. Uploads to GCS and creates DigitalOcean custom image
+4. Creates GitHub release tagged as `gatus-v1.0.1` or `foundry-v1.0.1`
+5. You can then create a droplet from the custom image
 
-**Deploy Workflow**:
-- Triggers: main branch push, manual dispatch
-- Options: Deploy to `all`, `gatus`, or `foundry`
-- Connects via Tailscale for secure access
-- Uses `deploy-rs` for atomic deployments
+**Manual options**:
+- Build specific image: Actions → Build & Release → Choose image
+- Deploy specific node: Actions → Deploy → Choose target (all/gatus/foundry)
 
 ### Required Secrets
 
