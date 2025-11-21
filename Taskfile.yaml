@@ -42,60 +42,7 @@ tasks:
   gh:deploy:
     desc: Bump version, generate AI changelog, and push (IMAGE=gatus|foundry BUMP_TYPE=patch|minor|major)
     cmds:
-      - task: bump
-        vars:
-          IMAGE: '{{.IMAGE}}'
-          BUMP_TYPE: '{{.BUMP_TYPE}}'
-      - |
-        VERSION_FILE="{{.IMAGE}}.version"
-        NEW_VERSION=$(cat "$VERSION_FILE")
-
-        echo "🤖 Generating changelog with AI..."
-
-        # Get git changes since last commit
-        GIT_DIFF=$(git diff HEAD)
-        GIT_STATUS=$(git status --short)
-
-        # Use Claude CLI to generate changelog
-        CHANGELOG=$(claude --no-color <<EOF
-        Generate a concise changelog for this NixOS {{.IMAGE}} image release.
-
-        New version: $NEW_VERSION
-
-        Recent changes:
-        $GIT_STATUS
-
-        Diff:
-        $GIT_DIFF
-
-        Format:
-        - Use conventional commits style
-        - Be specific about what changed
-        - 2-3 bullet points maximum
-        - No markdown formatting
-        - Start each line with "- "
-        EOF
-        )
-
-        echo "📝 Changelog:"
-        echo "$CHANGELOG"
-
-        # Stage and commit with AI-generated message
-        git add "$VERSION_FILE"
-        git add -u
-
-        git commit -m "$(cat <<COMMIT_EOF
-chore({{.IMAGE}}): bump to v$NEW_VERSION
-
-$CHANGELOG
-COMMIT_EOF
-)"
-
-        echo "🚀 Pushing to GitHub..."
-        git push
-
-        echo ""
-        echo "✅ Done! GitHub Actions will build and release {{.IMAGE}}-v$NEW_VERSION"
+      - ./scripts/bump-and-deploy.sh {{.IMAGE}} {{.BUMP_TYPE}}
 
   nix:build:
     desc: Build both NixOS images (gatus and foundry)
