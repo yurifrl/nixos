@@ -20,21 +20,25 @@ on:
           - foundry
 
 jobs:
-  deploy:
-    strategy:
-      matrix:
-        node: [gatus, foundry]
-      fail-fast: false  # Continue deploying other nodes if one fails
-
-    # Skip node if manual dispatch targets a specific one
-    if: |
-      github.event.inputs.target == 'all' ||
-      github.event.inputs.target == '' ||
-      github.event.inputs.target == matrix.node
-
+  deploy-gatus:
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == '' || github.event.inputs.target == 'gatus'
     uses: ./.github/workflows/_deploy-node.yml
     with:
-      node_name: ${{ matrix.node }}
+      node_name: gatus
+    secrets:
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+      DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+    permissions:
+      contents: read
+      id-token: write
+
+  deploy-foundry:
+    if: github.event.inputs.target == 'all' || github.event.inputs.target == '' || github.event.inputs.target == 'foundry'
+    uses: ./.github/workflows/_deploy-node.yml
+    with:
+      node_name: foundry
     secrets:
       TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
       TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
