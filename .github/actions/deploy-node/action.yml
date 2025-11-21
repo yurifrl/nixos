@@ -1,0 +1,87 @@
+name: 'Deploy NixOS Node'
+description: 'Deploy NixOS configuration to a single node'
+
+inputs:
+  node-name:
+    description: 'Name of the node to deploy (gatus or foundry)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Tailscale
+      uses: tailscale/github-action@v3
+      with:
+        oauth-client-id: "${{ env.TS_OAUTH_CLIENT_ID }}"
+        oauth-secret: "${{ env.TS_OAUTH_SECRET }}"
+        tags: tag:ci
+
+    - name: Install Nix
+      uses: DeterminateSystems/nix-installer-action@main
+      with:
+        flakehub: false
+
+    - name: Enable Nix Flakes
+      shell: bash
+      run: |
+        mkdir -p ~/.config/nix
+        echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+    - name: Create deploy.json
+      shell: bash
+      run: |
+        printf '%s\n' '${{ env.DEPLOY_NIX_JSON }}' > deploy.json
+
+    - name: Generate and setup SSH keys
+      shell: bash
+      run: |
+        echo "🔑 Generating SSH known hosts..."
+        KNOWN_HOSTS=""
+
+        for hostname in $(jq -r '.nodes[] | .tailscaleHostname // .hostname' deploy.json); do
+          echo "📡 Scanning $hostname..."
+          host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
+          if [ -n "$host_key" ]; then
+            KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
+          fi
+        done
+
+        mkdir -p ~/.ssh
+        echo "${{ env.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+        chmod 644 ~/.ssh/known_hosts
+
+    - name: Test connection
+      shell: bash
+      run: |
+        echo "🧪 Testing connection to ${{ inputs.node-name }}..."
+        hostname=$(jq -r ".nodes.${{ inputs.node-name }}.tailscaleHostname // .nodes.${{ inputs.node-name }}.hostname" deploy.json)
+        ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
+
+    - name: Cache Nix store
+      uses: nix-community/cache-nix-action@v6
+      with:
+        primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
+        paths: |
+          /nix/store
+          /nix-cache
+
+    - name: Install deploy-rs
+      shell: bash
+      run: nix profile install nixpkgs#deploy-rs
+
+    - name: Run deployment
+      shell: bash
+      run: |
+        echo "🚀 Deploying to ${{ inputs.node-name }}..."
+        deploy path:.#${{ inputs.node-name }}
+
+    - name: Deployment Summary
+      shell: bash
+      run: |
+        echo "## ✅ Deployment Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Node:** \`${{ inputs.node-name }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

@@ -79,25 +79,43 @@ jobs:
   build-gatus:
     needs: determine-builds
     if: needs.determine-builds.outputs.build_gatus == 'true'
-    uses: ./.github/workflows/_build-image.yml
-    with:
-      image_name: gatus
-    secrets: inherit
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          image-name: gatus
+        env:
+          DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
+          WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+          WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
   # Build Foundry
   build-foundry:
     needs: determine-builds
     if: needs.determine-builds.outputs.build_foundry == 'true'
-    uses: ./.github/workflows/_build-image.yml
-    with:
-      image_name: foundry
-    secrets: inherit
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-image
+        with:
+          image-name: foundry
+        env:
+          DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
+          WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+          WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
   # Create GitHub release for Gatus
   release-gatus:
