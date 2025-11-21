@@ -81,7 +81,7 @@ runs:
       shell: bash
       run: |
         echo "🚀 Deploying to ${{ inputs.node-name }}..."
-        deploy --skip-checks path:.#${{ inputs.node-name }}
+        deploy --skip-checks -- --option substitute false path:.#${{ inputs.node-name }}
 
     - name: Deployment Summary
       shell: bash
