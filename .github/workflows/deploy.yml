@@ -21,7 +21,6 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         node: [gatus, foundry]
@@ -33,10 +32,6 @@ jobs:
       github.event.inputs.target == '' ||
       github.event.inputs.target == matrix.node
 
-    permissions:
-      contents: read
-      id-token: write
-
     uses: ./.github/workflows/lib/_deploy-node.yml
     with:
       node_name: ${{ matrix.node }}
@@ -45,3 +40,6 @@ jobs:
       TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
       DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+    permissions:
+      contents: read
+      id-token: write
