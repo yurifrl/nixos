@@ -31,7 +31,7 @@ jobs:
       github.event.inputs.target == 'gatus'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/deploy-node
         with:
           node-name: gatus
@@ -48,7 +48,7 @@ jobs:
       github.event.inputs.target == 'foundry'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/deploy-node
         with:
           node-name: foundry
