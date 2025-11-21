@@ -1,9 +1,21 @@
-# Main NixOS configuration (backward compatibility - points to Gatus config)
-# For new deployments, use configuration-gatus.nix or configuration-foundry.nix directly
+# Base NixOS configuration shared between all images
 { config, pkgs, lib, nixpkgs, inputs, ... }:
 
 {
   imports = [
-    ./configuration-gatus.nix
+    ./hardware.nix
+    ./modules/shared/ssh.nix
+    ./modules/shared/tailscale.nix
+    ./users/root.nix
+  ];
+
+  # Digital Ocean image configuration
+  virtualisation.digitalOceanImage.compressionMethod = "bzip2";
+
+  # System packages
+  environment.systemPackages = [
+    inputs.self.packages.${pkgs.system}.cowsay-version
+    # Needed for ansible
+    pkgs.python3
   ];
 } 

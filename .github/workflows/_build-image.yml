@@ -1,0 +1,126 @@
+name: "📦 Build Single Image (Reusable)"
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        description: 'Name of the image to build (gatus or foundry)'
+        required: true
+        type: string
+    secrets:
+      DEPLOY_NIX_JSON:
+        required: true
+      WIF_PROVIDER:
+        required: true
+      WIF_SERVICE_ACCOUNT:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+      GCS_BUCKET_NAME:
+        required: true
+      DIGITALOCEAN_ACCESS_TOKEN:
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Enable Nix Flakes
+        run: |
+          mkdir -p ~/.config/nix
+          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: "${{ runner.os }}-nix-${{ inputs.image_name }}-${{ hashFiles('**/*.nix') }}"
+          paths: |
+            /nix/store
+            /nix-cache
+
+      - name: Create deploy.json
+        run: |
+          printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
+
+      - name: Build NixOS Image
+        run: |
+          echo "Building ${{ inputs.image_name }} image..."
+          nix build .#nixosConfigurations.${{ inputs.image_name }}.config.system.build.digitalOceanImage
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: "${{ secrets.WIF_PROVIDER }}"
+          service_account: "${{ secrets.WIF_SERVICE_ACCOUNT }}"
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: "${{ secrets.GCP_PROJECT_ID }}"
+
+      - name: Configure gsutil
+        run: |
+          echo "[GSUtil]
+          parallel_composite_upload_threshold = 150M" > ~/.boto
+
+      - name: Upload to GCS and create image
+        run: |
+          NIXOS_IMAGE_NAME="nixos-${{ inputs.image_name }}-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
+          echo "NIXOS_IMAGE_NAME=$NIXOS_IMAGE_NAME" >> $GITHUB_ENV
+
+          cp result/*qcow2.bz2 nixos-${{ inputs.image_name }}.qcow2.bz2
+
+          if [ ! -f nixos-${{ inputs.image_name }}.qcow2.bz2 ]; then
+            echo "Error: Failed to copy nixos image file"
+            ls -la result/
+            exit 1
+          fi
+
+          echo "✅ Found image file: nixos-${{ inputs.image_name }}.qcow2.bz2"
+          echo "📦 Image name: $NIXOS_IMAGE_NAME"
+          echo "☁️  GCS Bucket: ${{ secrets.GCS_BUCKET_NAME }}"
+
+          gsutil cp -v nixos-${{ inputs.image_name }}.qcow2.bz2 "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
+
+          if [ $? -ne 0 ]; then
+            echo "❌ Error: Failed to upload to GCS"
+            exit 1
+          fi
+
+          gsutil acl ch -u AllUsers:R "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
+
+          IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME"
+          echo "::add-mask::$IMAGE_URL"
+          echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
+
+      - name: Create DigitalOcean Image
+        run: |
+          doctl compute image create "$NIXOS_IMAGE_NAME" \
+            --region nyc1 \
+            --image-url "$IMAGE_URL" \
+            --image-description "NixOS ${{ inputs.image_name }} image built on $(date +%Y-%m-%d)"
+
+      - name: Build Summary
+        run: |
+          echo "## ✅ Build Complete: ${{ inputs.image_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Name:** \`$NIXOS_IMAGE_NAME\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Location:** [DigitalOcean Custom Images](https://cloud.digitalocean.com/images/custom_images)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY

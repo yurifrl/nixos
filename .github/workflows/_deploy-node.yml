@@ -1,0 +1,112 @@
+name: "🚀 Deploy Node (Reusable)"
+
+on:
+  workflow_call:
+    inputs:
+      node_name:
+        description: 'Name of the node to deploy (gatus, foundry, or all)'
+        required: true
+        type: string
+    secrets:
+      TS_OAUTH_CLIENT_ID:
+        required: true
+      TS_OAUTH_SECRET:
+        required: true
+      DEPLOY_NIX_JSON:
+        required: true
+      DEPLOY_SSH_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: "${{ secrets.TS_OAUTH_CLIENT_ID }}"
+          oauth-secret: "${{ secrets.TS_OAUTH_SECRET }}"
+          tags: tag:ci
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Enable Nix Flakes
+        run: |
+          mkdir -p ~/.config/nix
+          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
+
+      - name: Create deploy.json
+        run: |
+          printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
+
+      - name: Generate and setup SSH keys
+        run: |
+          echo "🔑 Generating SSH known hosts..."
+          KNOWN_HOSTS=""
+
+          # Scan all nodes for SSH keys
+          for hostname in $(jq -r '.nodes[] | .tailscaleHostname // .hostname' deploy.json); do
+            echo "📡 Scanning $hostname..."
+            host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
+            if [ -n "$host_key" ]; then
+              KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
+            fi
+          done
+
+          # Setup SSH key and known hosts
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Test connection to servers
+        run: |
+          echo "🧪 Testing connections..."
+          for node in $(jq -r '.nodes | keys[]' deploy.json); do
+            # Skip nodes not being deployed
+            if [[ "${{ inputs.node_name }}" != "all" ]] && [[ "${{ inputs.node_name }}" != "$node" ]]; then
+              echo "⏭️  Skipping $node (not selected for deployment)"
+              continue
+            fi
+
+            hostname=$(jq -r ".nodes.$node.tailscaleHostname // .nodes.$node.hostname" deploy.json)
+            echo "🔌 Testing connection to $node ($hostname)..."
+            ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test' || echo "⚠️  Warning: Could not connect to $node"
+          done
+
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v6
+        with:
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
+          paths: |
+            /nix/store
+            /nix-cache
+
+      - name: Install deploy-rs
+        run: nix profile install nixpkgs#deploy-rs
+
+      - name: Run deployment
+        run: |
+          if [[ "${{ inputs.node_name }}" == "all" ]]; then
+            echo "🚀 Deploying to all nodes..."
+            deploy path:.#
+          else
+            echo "🚀 Deploying to ${{ inputs.node_name }}..."
+            deploy path:.#${{ inputs.node_name }}
+          fi
+
+      - name: Deployment Summary
+        run: |
+          echo "## ✅ Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Node(s):** \`${{ inputs.node_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

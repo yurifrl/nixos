@@ -5,98 +5,25 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'Node to deploy'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - gatus
+          - foundry
 
 jobs:
+  # Deploy to all nodes or specific node
   deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          oauth-client-id: "${{ secrets.TS_OAUTH_CLIENT_ID }}"
-          oauth-secret: "${{ secrets.TS_OAUTH_SECRET }}"
-          tags: tag:ci
-      
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-      
-      - name: Enable Nix Flakes
-        run: |
-          mkdir -p ~/.config/nix
-          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
-
-      - name: Create deploy.json
-        run: |
-          printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
-
-      - name: Generate and setup SSH keys
-        run: |
-          # Generate known hosts from deploy.json
-          echo "Generating known hosts..."
-          KNOWN_HOSTS=""
-
-          # Handle both old format (flat keys) and new format (nodes object)
-          if jq -e '.nodes' deploy.json > /dev/null 2>&1; then
-            # New format with nodes object
-            for hostname in $(jq -r '.nodes[] | .tailscaleHostname // .hostname' deploy.json); do
-              echo "Scanning $hostname..."
-              host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
-              if [ -n "$host_key" ]; then
-                KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
-              fi
-            done
-          else
-            # Old format with flat keys (backward compatibility)
-            for hostname in $(jq -r 'to_entries[] | .value' deploy.json); do
-              echo "Scanning $hostname..."
-              host_key=$(ssh-keyscan -t ed25519 "$hostname" 2>/dev/null || true)
-              if [ -n "$host_key" ]; then
-                KNOWN_HOSTS="$KNOWN_HOSTS$host_key"$'\n'
-              fi
-            done
-          fi
-
-          # Setup SSH key and known hosts
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          echo "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-
-      - name: Test connection to servers
-        run: |
-          # Extract hostnames and test connections
-          if jq -e '.nodes' deploy.json > /dev/null 2>&1; then
-            # New format with nodes object
-            for node in $(jq -r '.nodes | keys[]' deploy.json); do
-              hostname=$(jq -r ".nodes.$node.tailscaleHostname // .nodes.$node.hostname" deploy.json)
-              echo "Testing connection to $node ($hostname)..."
-              ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test' || echo "Warning: Could not connect to $node"
-            done
-          else
-            # Old format (backward compatibility)
-            for hostname in $(jq -r 'to_entries[] | select(.key != "digitalOceanHostname") | .value' deploy.json); do
-              echo "Testing connection to $hostname..."
-              ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test' || echo "Warning: Could not connect"
-            done
-          fi
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v6
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
-          paths: |
-            /nix/store
-            /nix-cache
-
-      - name: Install deploy-rs
-        run: nix profile install nixpkgs#deploy-rs
-
-      - name: Run deployment
-        run: deploy path:.#
+    uses: ./.github/workflows/_deploy-node.yml
+    with:
+      node_name: ${{ github.event.inputs.target || 'all' }}
+    secrets:
+      TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+      DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}

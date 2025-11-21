@@ -52,14 +52,16 @@ Both services share common infrastructure (SSH, Tailscale VPN) but are deployed 
 │   └── foundry/                # Foundry VTT
 │       ├── default.nix        # Docker-based service
 │       └── cloudflared.nix    # Separate CF tunnel
-├── configuration-base.nix      # Base NixOS config
+├── configuration.nix           # Base NixOS config (shared)
 ├── configuration-gatus.nix     # Gatus-specific config
 ├── configuration-foundry.nix   # Foundry-specific config
-├── configuration.nix           # Backward compatibility
 ├── flake.nix                   # Nix flake with both images
 ├── .github/workflows/
-│   ├── build.yml              # Matrix build (change detection)
-│   └── deploy.yml             # Deploy both nodes
+│   ├── build.yml              # Main build workflow
+│   ├── deploy.yml             # Main deploy workflow
+│   ├── _detect-changes.yml    # Reusable: change detection
+│   ├── _build-image.yml       # Reusable: build single image
+│   └── _deploy-node.yml       # Reusable: deploy to node(s)
 ├── docs/
 │   └── FOUNDRY.md             # Foundry-specific docs
 └── README.md                   # This file
@@ -340,17 +342,27 @@ ssh root@<hostname> iptables -L -n -v
 
 ### GitHub Actions Workflows
 
-**Build Workflow** (`.github/workflows/build.yml`):
-- Triggers on tag push or main branch
-- Detects changed files
-- Builds only affected images via matrix
-- Uploads to Google Cloud Storage
-- Creates DigitalOcean custom images
+The repository uses **reusable workflows** for clean separation of concerns:
 
-**Deploy Workflow** (`.github/workflows/deploy.yml`):
-- Triggers on main branch push
-- Connects to Tailscale
-- Deploys to all configured nodes
+**Main Workflows**:
+- `build.yml` - Orchestrates building images (calls reusable workflows)
+- `deploy.yml` - Orchestrates deployments (calls reusable workflows)
+
+**Reusable Library Workflows** (prefixed with `_`):
+- `_detect-changes.yml` - Analyzes git diff to determine which images need rebuilding
+- `_build-image.yml` - Builds a single NixOS image and uploads to DO
+- `_deploy-node.yml` - Deploys configuration to specified node(s)
+
+**Build Workflow**:
+- Triggers: tag push, main branch push, manual dispatch
+- Change detection: Only builds images with modified files
+- Matrix build: Runs `gatus` and `foundry` builds in parallel
+- Output: DigitalOcean custom images uploaded to GCS
+
+**Deploy Workflow**:
+- Triggers: main branch push, manual dispatch
+- Options: Deploy to `all`, `gatus`, or `foundry`
+- Connects via Tailscale for secure access
 - Uses `deploy-rs` for atomic deployments
 
 ### Required Secrets

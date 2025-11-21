@@ -39,36 +39,13 @@
           ./hardware.nix
         ];
       };
-
-      # Backward compatibility: digitalOcean points to gatus
-      digitalOcean = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = {
-          inherit inputs nixpkgs;
-        };
-        modules = [
-          ./configuration.nix
-          ./hardware.nix
-        ];
-      };
     };
 
-    # Separate image configuration for faster switching
-    images = {
-      digitalOcean = 
-        (self.nixosConfigurations.digitalOcean.extendModules {
-          modules = [
-            {
-              virtualisation.digitalOceanImage.compressionMethod = "bzip2";
-            }
-          ];
-        }).config.system.build.digitalOceanImage;
-    };
     deploy = {
       nodes = {
         # Gatus monitoring node
         gatus = {
-          hostname = config.nodes.gatus.tailscaleHostname or config.digitalOceanTailscaleHostname;
+          hostname = config.nodes.gatus.tailscaleHostname;
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.gatus;
             sshUser = "root";
@@ -78,19 +55,9 @@
 
         # Foundry VTT node
         foundry = {
-          hostname = config.nodes.foundry.tailscaleHostname or "";
+          hostname = config.nodes.foundry.tailscaleHostname;
           profiles.system = {
             path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.foundry;
-            sshUser = "root";
-            remoteBuild = true;
-          };
-        };
-
-        # Backward compatibility
-        digitalOcean = {
-          hostname = config.digitalOceanTailscaleHostname or config.nodes.gatus.tailscaleHostname;
-          profiles.system = {
-            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.digitalOcean;
             sshUser = "root";
             remoteBuild = true;
           };
@@ -103,8 +70,9 @@
     devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
       buildInputs = with nixpkgs.legacyPackages.x86_64-linux; [ openssh ];
       shellHook = ''
-        echo "Adding ${config.digitalOceanHostname} to known_hosts..."
-        ssh-keyscan -t ed25519 ${config.digitalOceanHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach ${config.digitalOceanHostname}"
+        echo "Adding nodes to known_hosts..."
+        ssh-keyscan -t ed25519 ${config.nodes.gatus.tailscaleHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach gatus"
+        ssh-keyscan -t ed25519 ${config.nodes.foundry.tailscaleHostname} >> ~/.ssh/known_hosts 2>/dev/null || echo "Could not reach foundry"
       '';
     };
   };

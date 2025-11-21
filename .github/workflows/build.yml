@@ -12,167 +12,44 @@ on:
         description: 'Force build all images'
         required: false
         default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
-  # Detect which images need to be built based on changed files
+  # Detect which images need to be built
   detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      gatus: ${{ steps.filter.outputs.gatus }}
-      foundry: ${{ steps.filter.outputs.foundry }}
-      shared: ${{ steps.filter.outputs.shared }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Needed for change detection
+    uses: ./.github/workflows/_detect-changes.yml
+    with:
+      force_build_all: ${{ github.event.inputs.force_build == 'true' }}
 
-      - name: Detect changed files
-        id: filter
-        run: |
-          # On tag push or manual dispatch with force_build, build everything
-          if [[ "${{ github.ref_type }}" == "tag" ]] || [[ "${{ github.event.inputs.force_build }}" == "true" ]]; then
-            echo "gatus=true" >> $GITHUB_OUTPUT
-            echo "foundry=true" >> $GITHUB_OUTPUT
-            echo "shared=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Get list of changed files
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} || echo "")
-
-          # Check for changes in shared modules (affects both images)
-          if echo "$CHANGED_FILES" | grep -q "modules/shared/\|configuration-base.nix\|hardware.nix\|flake.nix"; then
-            echo "gatus=true" >> $GITHUB_OUTPUT
-            echo "foundry=true" >> $GITHUB_OUTPUT
-            echo "shared=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Check for Gatus-specific changes
-          if echo "$CHANGED_FILES" | grep -q "modules/gatus/\|configuration-gatus.nix"; then
-            echo "gatus=true" >> $GITHUB_OUTPUT
-          else
-            echo "gatus=false" >> $GITHUB_OUTPUT
-          fi
-
-          # Check for Foundry-specific changes
-          if echo "$CHANGED_FILES" | grep -q "modules/foundry/\|configuration-foundry.nix"; then
-            echo "foundry=true" >> $GITHUB_OUTPUT
-          else
-            echo "foundry=false" >> $GITHUB_OUTPUT
-          fi
-
-  build:
+  # Build Gatus image if needed
+  build-gatus:
     needs: detect-changes
-    runs-on: ubuntu-latest
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+    if: needs.detect-changes.outputs.build_gatus == 'true'
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      image_name: gatus
+    secrets:
+      DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
+      WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-    strategy:
-      matrix:
-        image: [gatus, foundry]
-
-    # Skip job if image doesn't need rebuilding
-    if: |
-      (matrix.image == 'gatus' && needs.detect-changes.outputs.gatus == 'true') ||
-      (matrix.image == 'foundry' && needs.detect-changes.outputs.foundry == 'true')
-
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-      
-      - name: Enable Nix Flakes
-        run: |
-          mkdir -p ~/.config/nix
-          echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v6
-        with:
-          primary-key: "${{ runner.os }}-nix-${{ hashFiles('**/*.nix') }}"
-          paths: |
-            /nix/store
-            /nix-cache
-
-      - name: Create deploy.json
-        run: |
-          printf '%s\n' '${{ secrets.DEPLOY_NIX_JSON }}' > deploy.json
-
-      - name: Build NixOS Image (${{ matrix.image }})
-        run: |
-          nix build .#nixosConfigurations.${{ matrix.image }}.config.system.build.digitalOceanImage
-
-      - name: Google Auth
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: "${{ secrets.WIF_PROVIDER }}"
-          service_account: "${{ secrets.WIF_SERVICE_ACCOUNT }}"
-
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: "${{ secrets.GCP_PROJECT_ID }}"
-
-      - name: Configure gsutil
-        run: |
-          # Create .boto configuration file
-          echo "[GSUtil]
-          parallel_composite_upload_threshold = 150M" > ~/.boto
-
-      - name: Upload to GCS and create image
-        run: |
-          # Generate image name with timestamp and image type
-          NIXOS_IMAGE_NAME="nixos-${{ matrix.image }}-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
-          echo "NIXOS_IMAGE_NAME=$NIXOS_IMAGE_NAME" >> $GITHUB_ENV
-
-          # Copy the qcow2.bz2 file with a simple name
-          cp result/*qcow2.bz2 nixos-${{ matrix.image }}.qcow2.bz2
-
-          if [ ! -f nixos-${{ matrix.image }}.qcow2.bz2 ]; then
-            echo "Error: Failed to copy nixos image file"
-            ls -la result/
-            exit 1
-          fi
-
-          echo "Found image file: nixos-${{ matrix.image }}.qcow2.bz2"
-          echo "NIXOS_IMAGE_NAME: $NIXOS_IMAGE_NAME"
-          echo "GCS Bucket: ${{ secrets.GCS_BUCKET_NAME }}"
-
-          # Upload to GCS with public access
-          gsutil cp -v nixos-${{ matrix.image }}.qcow2.bz2 "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
-
-          if [ $? -ne 0 ]; then
-            echo "Error: Failed to upload to GCS"
-            exit 1
-          fi
-
-          gsutil acl ch -u AllUsers:R "gs://${{ secrets.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
-
-          # Get the public URL
-          IMAGE_URL="https://storage.googleapis.com/${{ secrets.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME"
-          echo "::add-mask::$IMAGE_URL"
-          echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}"
-  
-      - name: Create DigitalOcean Image
-        run: |
-          doctl compute image create "$NIXOS_IMAGE_NAME" \
-            --region nyc1 \
-            --image-url "$IMAGE_URL" \
-            --image-description "NixOS ${{ matrix.image }} image built on $(date +%Y-%m-%d)"
-
-      - name: Get Artifact Information
-        run: |
-          echo "✓ Process completed successfully for ${{ matrix.image }} image"
-          echo "→ Custom image will be available at: https://cloud.digitalocean.com/images/custom_images"
-          echo "→ Image name: $NIXOS_IMAGE_NAME"
-
-          
+  # Build Foundry image if needed
+  build-foundry:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.build_foundry == 'true'
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      image_name: foundry
+    secrets:
+      DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
+      WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
+      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}

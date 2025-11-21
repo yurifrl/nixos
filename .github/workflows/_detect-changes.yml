@@ -1,0 +1,79 @@
+name: "🔍 Detect Changes (Reusable)"
+
+on:
+  workflow_call:
+    inputs:
+      force_build_all:
+        description: 'Force build all images regardless of changes'
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      build_gatus:
+        description: 'Whether to build Gatus image'
+        value: ${{ jobs.detect.outputs.gatus }}
+      build_foundry:
+        description: 'Whether to build Foundry image'
+        value: ${{ jobs.detect.outputs.foundry }}
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      gatus: ${{ steps.filter.outputs.gatus }}
+      foundry: ${{ steps.filter.outputs.foundry }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files
+        id: filter
+        run: |
+          # Force build all on tag push or manual request
+          if [[ "${{ github.ref_type }}" == "tag" ]] || [[ "${{ inputs.force_build_all }}" == "true" ]]; then
+            echo "🏗️  Force building all images (tag push or manual request)"
+            echo "gatus=true" >> $GITHUB_OUTPUT
+            echo "foundry=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} || echo "")
+
+          echo "📝 Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Check for shared module changes (affects both images)
+          if echo "$CHANGED_FILES" | grep -q "modules/shared/\|configuration-base.nix\|hardware.nix\|flake.nix"; then
+            echo "🔄 Shared infrastructure changed - rebuilding both images"
+            echo "gatus=true" >> $GITHUB_OUTPUT
+            echo "foundry=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check Gatus-specific changes
+          if echo "$CHANGED_FILES" | grep -q "modules/gatus/\|configuration-gatus.nix"; then
+            echo "📊 Gatus modules changed"
+            echo "gatus=true" >> $GITHUB_OUTPUT
+          else
+            echo "gatus=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check Foundry-specific changes
+          if echo "$CHANGED_FILES" | grep -q "modules/foundry/\|configuration-foundry.nix"; then
+            echo "🎮 Foundry modules changed"
+            echo "foundry=true" >> $GITHUB_OUTPUT
+          else
+            echo "foundry=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Detection Summary
+        run: |
+          echo "## 🔍 Change Detection Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Image | Build Required |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|----------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Gatus | ${{ steps.filter.outputs.gatus == 'true' && '✅ Yes' || '⏭️ Skip' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Foundry | ${{ steps.filter.outputs.foundry == 'true' && '✅ Yes' || '⏭️ Skip' }} |" >> $GITHUB_STEP_SUMMARY

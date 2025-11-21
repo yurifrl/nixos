@@ -3,7 +3,7 @@
 
 {
   imports = [
-    ./configuration-base.nix
+    ./configuration.nix
     ./modules/foundry
     ./modules/foundry/cloudflared.nix
   ];

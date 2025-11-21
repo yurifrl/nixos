@@ -3,7 +3,7 @@
 
 {
   imports = [
-    ./configuration-base.nix
+    ./configuration.nix
     ./modules/gatus
     ./modules/gatus/cloudflared.nix
   ];
