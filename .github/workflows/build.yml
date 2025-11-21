@@ -1,4 +1,4 @@
-name: "🏗️ Build & Release NixOS Images"
+name: "<� Build & Release NixOS Images"
 
 on:
   push:
@@ -7,10 +7,6 @@ on:
     paths:
       - 'gatus.version'
       - 'foundry.version'
-      - 'modules/**'
-      - 'configuration*.nix'
-      - 'flake.nix'
-      - 'hardware.nix'
   workflow_dispatch:
 
 permissions:
@@ -68,12 +64,9 @@ jobs:
 
           ### Usage
           \`\`\`bash
-          # Find the image in DigitalOcean custom images:
           # nixos-gatus-YYYYMMDD-HHMMSS
-
-          # Or deploy to existing droplet:
           task nix-deploy-gatus
-          \`\`\`" || echo "Release may already exist"
+          \`\`\`" || echo "Release exists"
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -127,13 +120,10 @@ jobs:
 
           ### Usage
           \`\`\`bash
-          # Find the image in DigitalOcean custom images:
           # nixos-foundry-YYYYMMDD-HHMMSS
-
-          # Or deploy to existing droplet:
           task nix-deploy-foundry
           \`\`\`
 
-          **Note**: Requires 50GB DigitalOcean block storage volume attached" || echo "Release may already exist"
+          **Note**: Requires 50GB volume" || echo "Release exists"
         env:
           GH_TOKEN: ${{ github.token }}
