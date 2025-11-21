@@ -2,21 +2,11 @@ version: "3"
 
 dotenv: [.env]
 
-vars:
-  IMAGE: '{{.IMAGE | default "gatus"}}'
-  BUMP_TYPE: '{{.BUMP_TYPE | default "patch"}}'
-  PUSH: '{{.PUSH | default "true"}}'
-
 tasks:
-  deploy:
-    desc: 🚀 Interactive release with beautiful TUI (charm-style CLI)
-    cmds:
-      - ./scripts/deploy
-
   release:
-    desc: Non-interactive release (IMAGE=gatus|foundry BUMP_TYPE=patch|minor|major PUSH=true|false)
+    desc: 🚀 Interactive release - beautiful TUI for version bumps + AI changelogs
     cmds:
-      - ./scripts/release.sh {{.IMAGE}} {{.BUMP_TYPE}} {{.PUSH}}
+      - ./scripts/release
 
   nix:build:
     desc: Build both NixOS images (gatus and foundry)

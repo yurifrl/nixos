@@ -103,17 +103,8 @@ task nix:deploy:foundry
 
 ### Version Management
 
-**Interactive (Recommended)** - Beautiful TUI with step-by-step flow:
 ```bash
-task deploy
-```
-
-**Non-interactive** - For scripts/automation:
-```bash
-IMAGE=gatus task release                    # Patch bump (default)
-IMAGE=foundry BUMP_TYPE=minor task release  # Minor bump
-IMAGE=gatus BUMP_TYPE=major task release    # Major bump
-IMAGE=foundry PUSH=false task release       # Don't push
+task release  # Interactive TUI - select image, bump type, AI changelog
 ```
 
 ## Setup New Machines
@@ -316,33 +307,9 @@ task nix:deploy:gatus
 
 **For image updates** (requires rebuild):
 ```bash
-# 1. Make changes
-vim modules/foundry/default.nix
-
-# 2. Interactive release (beautiful TUI!)
-task deploy
-#   → Select: Foundry VTT
-#   → Choose: Patch/Minor/Major
-#   → AI generates changelog
-#   → Review and confirm
-#   → Commits and pushes
-
-# 3. GitHub Actions builds (~5-10 min)
-# 4. Deploy to server
-task nix:deploy:foundry
-```
-
-**Non-interactive workflow** (for automation):
-```bash
-# Make changes
-vim modules/gatus/config.yaml
-
-# Release with one command
-IMAGE=gatus task release
-
-# Or with options
-IMAGE=foundry BUMP_TYPE=minor task release
-IMAGE=gatus PUSH=false task release  # Review first
+vim modules/foundry/default.nix  # Make changes
+task release                     # Interactive: bump, AI changelog, push
+task nix:deploy:foundry          # Deploy to server
 ```
 
 ### Adding New Services
