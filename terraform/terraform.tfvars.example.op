@@ -1,0 +1,2 @@
+digitalocean_api_token  = "op://kubernetes/nixos/digitalocean_api_token"
+ssh_key_fingerprint     = "op://kubernetes/nixos/ssh_key_fingerprint"

@@ -168,7 +168,7 @@ Update `deploy.json` in 1Password (`op://kubernetes/nixos/deploy.json`):
     },
     "foundry": {
       "hostname": "foundry-droplet-ip",
-      "tailscaleHostname": "rpg.tailcecc0.ts.net",
+      "tailscaleHostname": "foundry.tailcecc0.ts.net",
       "sshUser": "root"
     }
   }
@@ -228,7 +228,7 @@ ssh root@gatus.tailcecc0.ts.net systemctl restart gatus
 
 **Access**:
 - https://rpg.syscd.live (public via Cloudflare)
-- http://rpg.tailcecc0.ts.net:30000 (Tailscale VPN)
+- http://foundry.tailcecc0.ts.net:30000 (Tailscale VPN)
 
 **Features**:
 - Docker-based deployment
@@ -239,16 +239,16 @@ ssh root@gatus.tailcecc0.ts.net systemctl restart gatus
 **Commands**:
 ```bash
 # Check service status
-ssh root@rpg.tailcecc0.ts.net systemctl status foundry
+ssh root@foundry.tailcecc0.ts.net systemctl status foundry
 
 # View logs
-ssh root@rpg.tailcecc0.ts.net journalctl -u foundry -f
+ssh root@foundry.tailcecc0.ts.net journalctl -u foundry -f
 
 # Restart service (pulls latest Docker image)
-ssh root@rpg.tailcecc0.ts.net systemctl restart foundry
+ssh root@foundry.tailcecc0.ts.net systemctl restart foundry
 
 # Check Docker container
-ssh root@rpg.tailcecc0.ts.net docker ps
+ssh root@foundry.tailcecc0.ts.net docker ps
 ```
 
 See [docs/FOUNDRY.md](docs/FOUNDRY.md) for detailed Foundry setup and maintenance guide.
@@ -339,7 +339,7 @@ ssh root@<hostname> journalctl -u tailscale-autoconnect -f
 ssh root@gatus.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
 
 # Foundry
-ssh root@rpg.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
+ssh root@foundry.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
 ```
 
 **Service won't start**:

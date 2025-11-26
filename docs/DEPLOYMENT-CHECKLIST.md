@@ -257,7 +257,7 @@ tailscale status
 
 # You should see (after ~1 minute):
 # gatus.tailcecc0.ts.net
-# rpg.tailcecc0.ts.net
+# foundry.tailcecc0.ts.net
 ```
 
 ### 5.2 Get Tailscale Hostnames
@@ -288,7 +288,7 @@ Create a file with your actual IPs and Tailscale hostnames:
     },
     "foundry": {
       "hostname": "YOUR_FOUNDRY_IP",
-      "tailscaleHostname": "rpg.tailcecc0.ts.net",
+      "tailscaleHostname": "foundry.tailcecc0.ts.net",
       "sshUser": "root"
     }
   }
@@ -382,7 +382,7 @@ Watch the services come online:
 ssh root@gatus.tailcecc0.ts.net journalctl -u gatus -f
 
 # Foundry logs
-ssh root@rpg.tailcecc0.ts.net journalctl -u foundry -f
+ssh root@foundry.tailcecc0.ts.net journalctl -u foundry -f
 
 # Tailscale logs (both)
 ssh root@gatus.tailcecc0.ts.net journalctl -u tailscale-autoconnect -f
@@ -412,18 +412,18 @@ open https://rpg.syscd.live
 ```bash
 # Ping via Tailscale
 ping gatus.tailcecc0.ts.net
-ping rpg.tailcecc0.ts.net
+ping foundry.tailcecc0.ts.net
 
 # Check direct access
 curl http://gatus.tailcecc0.ts.net:8080
-curl http://rpg.tailcecc0.ts.net:30000
+curl http://foundry.tailcecc0.ts.net:30000
 ```
 
 ### 9.3 Check Foundry Volume
 
 ```bash
 # SSH to Foundry
-ssh root@rpg.tailcecc0.ts.net
+ssh root@foundry.tailcecc0.ts.net
 
 # Verify volume is mounted
 df -h | grep foundry-data
@@ -460,27 +460,27 @@ tailscale up --authkey $(cat /etc/tailscale/tailscale-auth.key) --accept-dns --a
 
 ```bash
 # Check tunnel status
-ssh root@rpg.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
+ssh root@foundry.tailcecc0.ts.net systemctl status cloudflared-tunnel-*
 
 # Check tunnel logs
-ssh root@rpg.tailcecc0.ts.net journalctl -u cloudflared-tunnel-* -f
+ssh root@foundry.tailcecc0.ts.net journalctl -u cloudflared-tunnel-* -f
 
 # Verify credentials exist
-ssh root@rpg.tailcecc0.ts.net cat /etc/cloudflared/foundry-tunnel.json
+ssh root@foundry.tailcecc0.ts.net cat /etc/cloudflared/foundry-tunnel.json
 ```
 
 ### If Foundry won't start:
 
 ```bash
 # Check service
-ssh root@rpg.tailcecc0.ts.net systemctl status foundry
+ssh root@foundry.tailcecc0.ts.net systemctl status foundry
 
 # Check Docker logs
-ssh root@rpg.tailcecc0.ts.net docker logs foundry
+ssh root@foundry.tailcecc0.ts.net docker logs foundry
 
 # Verify secrets exist
-ssh root@rpg.tailcecc0.ts.net ls -la /etc/foundry/
-ssh root@rpg.tailcecc0.ts.net cat /etc/foundry/license-key
+ssh root@foundry.tailcecc0.ts.net ls -la /etc/foundry/
+ssh root@foundry.tailcecc0.ts.net cat /etc/foundry/license-key
 ```
 
 ---

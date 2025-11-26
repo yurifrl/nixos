@@ -44,11 +44,6 @@ tasks:
     cmds:
       - deploy path:.#foundry
 
-  load:envs:
-    desc: Load environment variables
-    cmds:
-      - op inject -f -i .env.op -o .env
-
   nix:cache:
     desc: Cache build products and dependencies
     cmds:
@@ -82,6 +77,12 @@ tasks:
         echo "----------------------------------------"
         echo ""
         echo "📍 Add to: https://github.com/yurifrl/nixos/settings/secrets/actions"
+
+  load:envs:
+    desc: Load environment variables
+    cmds:
+      - op inject -f -i .env.op -o .env
+      - op inject -f -i  terraform/terraform.tfvars.example.op -o terraform/terraform.tfvars
 
   secrets:load:build:
     desc: Load build secrets (deploy.json from 1Password)
@@ -132,18 +133,14 @@ tasks:
       - echo "Loading secrets for Foundry server..."
       # Download secrets from 1Password
       - op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-      - op read "op://kubernetes/foundry-cloudflared-tunnel.json/notesPlain" -f -o foundry-cloudflared-tunnel.json || op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json
-      - op read "op://kubernetes/nixos/foundry-license.key" -f -o foundry-license.key
-      - op read "op://kubernetes/nixos/foundry-admin.key" -f -o foundry-admin.key
+      - op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json || op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json
       # Setup directories
       - ssh {{.HOST}} "mkdir -p {{.DIRS}}"
       # Copy secrets
       - scp tailscale-auth.key {{.HOST}}:/etc/tailscale/tailscale-auth.key
       - scp foundry-cloudflared-tunnel.json {{.HOST}}:/etc/cloudflared/foundry-tunnel.json
-      - scp foundry-license.key {{.HOST}}:/etc/foundry/license-key
-      - scp foundry-admin.key {{.HOST}}:/etc/foundry/admin-key
       # Set permissions
-      - ssh {{.HOST}} "chmod 600 /etc/tailscale/tailscale-auth.key /etc/cloudflared/foundry-tunnel.json /etc/foundry/license-key /etc/foundry/admin-key"
+      - ssh {{.HOST}} "chmod 600 /etc/tailscale/tailscale-auth.key /etc/cloudflared/foundry-tunnel.json"
       - ssh {{.HOST}} "chown -R tailscale:tailscale /etc/tailscale"
       - ssh {{.HOST}} "chown -R cloudflared:cloudflared /etc/cloudflared"
       - ssh {{.HOST}} "chown -R foundry:foundry /etc/foundry"

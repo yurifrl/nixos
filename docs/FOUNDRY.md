@@ -10,7 +10,7 @@ The Foundry VTT deployment uses:
 - **Networking**: Tailscale VPN + Cloudflare Tunnel for public access
 - **Domains**:
   - `rpg.syscd.live` (public via Cloudflare)
-  - `rpg.tailcecc0.ts.net` (Tailscale VPN only)
+  - `foundry.tailcecc0.ts.net` (Tailscale VPN only)
 
 ## Architecture
 
@@ -122,7 +122,7 @@ Add Foundry node configuration:
     },
     "foundry": {
       "hostname": "foundry-droplet-ip",
-      "tailscaleHostname": "rpg.tailcecc0.ts.net",
+      "tailscaleHostname": "foundry.tailcecc0.ts.net",
       "sshUser": "root"
     }
   }
@@ -175,7 +175,7 @@ The Docker image automatically pulls the `:release` tag. To update:
 
 ```bash
 # SSH to Foundry server
-ssh root@rpg.tailcecc0.ts.net
+ssh root@foundry.tailcecc0.ts.net
 
 # Restart the Foundry service (will pull latest image)
 systemctl restart foundry
@@ -185,10 +185,10 @@ systemctl restart foundry
 
 ```bash
 # View Foundry service logs
-ssh root@rpg.tailcecc0.ts.net journalctl -u foundry -f
+ssh root@foundry.tailcecc0.ts.net journalctl -u foundry -f
 
 # View Docker container logs
-ssh root@rpg.tailcecc0.ts.net docker logs -f foundry
+ssh root@foundry.tailcecc0.ts.net docker logs -f foundry
 ```
 
 ### Backup and Restore
@@ -197,7 +197,7 @@ ssh root@rpg.tailcecc0.ts.net docker logs -f foundry
 
 ```bash
 # SSH to Foundry server
-ssh root@rpg.tailcecc0.ts.net
+ssh root@foundry.tailcecc0.ts.net
 
 # Stop Foundry service
 systemctl stop foundry
@@ -209,20 +209,20 @@ tar czf /tmp/foundry-backup-$(date +%Y%m%d).tar.gz /mnt/foundry-data
 systemctl start foundry
 
 # Download backup
-scp root@rpg.tailcecc0.ts.net:/tmp/foundry-backup-*.tar.gz ./backups/
+scp root@foundry.tailcecc0.ts.net:/tmp/foundry-backup-*.tar.gz ./backups/
 ```
 
 #### Restore
 
 ```bash
 # SSH to Foundry server
-ssh root@rpg.tailcecc0.ts.net
+ssh root@foundry.tailcecc0.ts.net
 
 # Stop Foundry service
 systemctl stop foundry
 
 # Upload backup
-scp ./backups/foundry-backup-YYYYMMDD.tar.gz root@rpg.tailcecc0.ts.net:/tmp/
+scp ./backups/foundry-backup-YYYYMMDD.tar.gz root@foundry.tailcecc0.ts.net:/tmp/
 
 # Extract backup
 tar xzf /tmp/foundry-backup-YYYYMMDD.tar.gz -C /
@@ -257,48 +257,48 @@ doctl compute volume create foundry-data-restored \
 
 1. Check service status:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net systemctl status foundry
+   ssh root@foundry.tailcecc0.ts.net systemctl status foundry
    ```
 
 2. Check Docker container:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net docker ps -a
+   ssh root@foundry.tailcecc0.ts.net docker ps -a
    ```
 
 3. Check logs:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net journalctl -u foundry -n 100
+   ssh root@foundry.tailcecc0.ts.net journalctl -u foundry -n 100
    ```
 
 ### Volume Not Mounted
 
 1. Check volume attachment:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net ls -la /dev/disk/by-id/
+   ssh root@foundry.tailcecc0.ts.net ls -la /dev/disk/by-id/
    ```
 
 2. Check filesystem mount:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net df -h /mnt/foundry-data
+   ssh root@foundry.tailcecc0.ts.net df -h /mnt/foundry-data
    ```
 
 3. If not mounted, check fstab and remount:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net mount -a
+   ssh root@foundry.tailcecc0.ts.net mount -a
    ```
 
 ### Can't Access via Cloudflare
 
 1. Check Cloudflare tunnel status:
    ```bash
-   ssh root@rpg.tailcecc0.ts.net systemctl status cloudflared
+   ssh root@foundry.tailcecc0.ts.net systemctl status cloudflared
    ```
 
 2. Verify DNS records in Cloudflare dashboard
 
 3. Test local access via Tailscale:
    ```bash
-   curl http://rpg.tailcecc0.ts.net:30000
+   curl http://foundry.tailcecc0.ts.net:30000
    ```
 
 ### Permission Issues
@@ -306,7 +306,7 @@ doctl compute volume create foundry-data-restored \
 If Foundry can't write to `/data`:
 
 ```bash
-ssh root@rpg.tailcecc0.ts.net
+ssh root@foundry.tailcecc0.ts.net
 chown -R 1000:1000 /mnt/foundry-data
 chmod 755 /mnt/foundry-data
 ```

@@ -11,7 +11,6 @@ RUN nix-env -iA \
 # === Bazel
 RUN nix-env -iA \
 nixpkgs.bazel_6 \
-nixpkgs.git \
 nixpkgs.gcc \
 nixpkgs.python3
 # Verify Bazel installation
