@@ -1,12 +1,12 @@
 {
   "nodes": {
     "gatus": {
-      "hostname": "000.00.000.000",
-      "tailscaleHostname": "digitalocean-nixos-01.tailcecc0.ts.net",
+      "hostname": "GATUS_IP",
+      "tailscaleHostname": "digitalocean-gatus-01.tailcecc0.ts.net",
       "sshUser": "root"
     },
     "foundry": {
-      "hostname": "000.00.000.000",
+      "hostname": "FOUNDRY_IP",
       "tailscaleHostname": "digitalocean-foundry-01.tailcecc0.ts.net",
       "sshUser": "root"
     }

@@ -31,14 +31,13 @@ tasks:
 
         echo "📦 Updating deploy.json..."
         cd ..
-        op read "op://kubernetes/nixos/GItHUB/deploy.json" -f -o deploy.json
-        jq ".nodes.gatus.hostname = \"$GATUS_IP\" | .nodes.foundry.hostname = \"$FOUNDRY_IP\"" deploy.json > deploy.json.tmp
-        mv deploy.json.tmp deploy.json
+        sed -e "s/GATUS_IP/$GATUS_IP/" -e "s/FOUNDRY_IP/$FOUNDRY_IP/" deploy.json.template > /tmp/deploy.json
 
-        DEPLOY_JSON=$(cat deploy.json | jq -c .)
-        op item edit nixos --vault kubernetes "yhy7znjb6yif2hykklddrkm7oy[text]=$DEPLOY_JSON"
+        op item edit nixos "deploy.json[text]=$(cat /tmp/deploy.json)"
+        jq -c . /tmp/deploy.json | gh secret set DEPLOY_NIX_JSON
+        rm /tmp/deploy.json
 
-        echo "✅ 1Password updated successfully!"
+        echo "✅ 1Password & GitHub updated"
         echo "   Gatus: $GATUS_IP"
         echo "   Foundry: $FOUNDRY_IP"
 
