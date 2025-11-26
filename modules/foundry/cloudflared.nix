@@ -26,9 +26,23 @@
         credentialsFile = "/etc/cloudflared/tunnel.json";
         ingress = {
           "rpg.syscd.live" = "http://localhost:30000";
+          "foundry.syscd.live" = "http://localhost:30000";
+          # Add more hostnames here if needed
         };
         default = "http_status:404";
       };
+    };
+  };
+
+  # Ensure cloudflared only starts after credentials file exists
+  systemd.services."cloudflared-tunnel-8bc2858c-a6a4-474f-9287-5af2c1928578" = {
+    unitConfig = {
+      ConditionPathExists = "/etc/cloudflared/tunnel.json";
+    };
+
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "10s";
     };
   };
 }

@@ -31,4 +31,16 @@
       };
     };
   };
+
+  # Ensure cloudflared only starts after credentials file exists
+  systemd.services."cloudflared-tunnel-3b90d790-0a11-46ae-9421-d195cc828947" = {
+    unitConfig = {
+      ConditionPathExists = "/etc/cloudflared/tunnel.json";
+    };
+
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "10s";
+    };
+  };
 } 

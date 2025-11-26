@@ -43,6 +43,8 @@
 
     serviceConfig = {
       Type = "simple";
+      EnvironmentFile = "/etc/foundry/foundry.env";
+
       ExecStartPre = [
         # Cleanup any existing container
         "-${pkgs.docker}/bin/docker stop foundry"
@@ -55,8 +57,10 @@
         ${pkgs.docker}/bin/docker run \
           --name foundry \
           --rm \
-          -e FOUNDRY_ADMIN_KEY=$(cat /etc/foundry/admin-key) \
-          -e FOUNDRY_LICENSE_KEY=$(cat /etc/foundry/license-key) \
+          -e FOUNDRY_ADMIN_KEY \
+          -e FOUNDRY_LICENSE_KEY \
+          -e FOUNDRY_USERNAME \
+          -e FOUNDRY_PASSWORD \
           -e FOUNDRY_HOSTNAME=rpg.syscd.live \
           -e FOUNDRY_PROXY_SSL=true \
           -e FOUNDRY_PROXY_PORT=443 \
