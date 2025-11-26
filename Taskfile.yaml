@@ -2,6 +2,12 @@ version: "3"
 
 dotenv: [.env]
 
+includes:
+  nix: ./taskfiles/nix.yaml
+  secrets: ./taskfiles/secrets.yaml
+  ssh: ./taskfiles/ssh.yaml
+  tf: ./taskfiles/terraform.yaml
+
 tasks:
   release:
     desc: 🚀 Interactive release - beautiful TUI for version bumps + AI changelogs
@@ -12,136 +18,3 @@ tasks:
     desc: ⚡ Quick patch release - auto-bump patch version and push
     cmds:
       - ./scripts/release --quick
-
-  nix:build:
-    desc: Build both NixOS images (gatus and foundry)
-    cmds:
-      - task: nix:build:gatus
-      - task: nix:build:foundry
-
-  nix:build:gatus:
-    desc: Build the Gatus monitoring image
-    cmds:
-      - nix build .#nixosConfigurations.gatus.config.system.build.digitalOceanImage --system x86_64-linux
-
-  nix:build:foundry:
-    desc: Build the Foundry VTT image
-    cmds:
-      - nix build .#nixosConfigurations.foundry.config.system.build.digitalOceanImage --system x86_64-linux
-
-  nix:deploy:
-    desc: Deploy both NixOS configurations (gatus and foundry)
-    cmds:
-      - deploy path:.#
-
-  nix:deploy:gatus:
-    desc: Deploy only Gatus configuration
-    cmds:
-      - deploy path:.#gatus
-
-  nix:deploy:foundry:
-    desc: Deploy only Foundry configuration
-    cmds:
-      - deploy path:.#foundry
-
-  nix:cache:
-    desc: Cache build products and dependencies
-    cmds:
-      - ./hack/cache.sh
-
-  ssh:generate:
-    desc: Generate new SSH keys for deployment
-    dir: ./secrets/deploy-key
-    cmds:
-      - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
-      - ssh-keyscan -t ed25519 "{{.GATUS_TAILSCALE_HOST}}" > ./known_hosts
-      - ssh-keyscan -t ed25519 "{{.GATUS_DROPLET_IP}}" >> ./known_hosts
-      - ssh-keyscan -t ed25519 "{{.FOUNDRY_TAILSCALE_HOST}}" >> ./known_hosts
-      - ssh-keyscan -t ed25519 "{{.FOUNDRY_DROPLET_IP}}" >> ./known_hosts
-      - |
-        echo "✨ Keys generated successfully!"
-        echo ""
-        echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
-        echo "----------------------------------------"
-        cat ./deploy-key
-        echo "----------------------------------------"
-        echo ""
-        echo "🔐 Public Key (add to NixOS config users/root.nix):"
-        echo "----------------------------------------"
-        cat ./deploy-key.pub
-        echo "----------------------------------------"
-        echo ""
-        echo "🌐 Known Hosts (for reference):"
-        echo "----------------------------------------"
-        cat ./known_hosts
-        echo "----------------------------------------"
-        echo ""
-        echo "📍 Add to: https://github.com/yurifrl/nixos/settings/secrets/actions"
-
-  load:envs:
-    desc: Load environment variables
-    cmds:
-      - op inject -f -i .env.op -o .env
-      - op inject -f -i  terraform/terraform.tfvars.example.op -o terraform/terraform.tfvars
-
-  secrets:load:build:
-    desc: Load build secrets (deploy.json from 1Password)
-    cmds:
-      - |
-        echo "deploy.json" >> .git/info/exclude
-        op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
-        echo "✅ deploy.json loaded"
-
-  secrets:load:
-    desc: Load all runtime secrets to both servers
-    cmds:
-      - task: secrets:load:gatus
-      - task: secrets:load:foundry
-
-  secrets:load:gatus:
-    desc: Load Gatus server secrets
-    dir: ./secrets
-    vars:
-      HOST: "{{.GATUS_DROPLET_USER}}@{{.GATUS_DROPLET_IP}}"
-      DIRS: "/etc/tailscale /etc/cloudflared /etc/gatus"
-    cmds:
-      - echo "Loading secrets for Gatus server..."
-      # Download secrets from 1Password
-      - op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-      - op read "op://kubernetes/nixos/gatus-cloudflared-creds.json" -f -o gatus-cloudflared-creds.json
-      - op read "op://kubernetes/nixos/gatus.env" -f -o gatus.env
-      # Setup directories
-      - ssh {{.HOST}} "mkdir -p {{.DIRS}}"
-      # Copy secrets
-      - scp tailscale-auth.key {{.HOST}}:/etc/tailscale/tailscale-auth.key
-      - scp gatus-cloudflared-creds.json {{.HOST}}:/etc/cloudflared/config.json
-      - scp gatus.env {{.HOST}}:/etc/gatus/gatus.env
-      # Set permissions
-      - ssh {{.HOST}} "chmod 600 /etc/tailscale/tailscale-auth.key /etc/cloudflared/config.json /etc/gatus/gatus.env"
-      - ssh {{.HOST}} "chown -R tailscale:tailscale /etc/tailscale"
-      - ssh {{.HOST}} "chown -R gatus:gatus /etc/gatus"
-      - ssh {{.HOST}} "chown -R cloudflared:cloudflared /etc/cloudflared"
-      - echo "✅ Gatus secrets loaded successfully"
-
-  secrets:load:foundry:
-    desc: Load Foundry server secrets
-    dir: ./secrets
-    vars:
-      HOST: "{{.FOUNDRY_DROPLET_USER}}@{{.FOUNDRY_DROPLET_IP}}"
-      DIRS: "/etc/tailscale /etc/cloudflared /etc/foundry"
-    cmds:
-      - echo "Loading secrets for Foundry server..."
-      # Download secrets from 1Password
-      - op read "op://kubernetes/nixos/tailscale-auth.key" -f -o tailscale-auth.key
-      - op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json || op read "op://kubernetes/nixos/foundry-cloudflared-tunnel.json" -f -o foundry-cloudflared-tunnel.json
-      # Setup directories
-      - ssh {{.HOST}} "mkdir -p {{.DIRS}}"
-      # Copy secrets
-      - scp tailscale-auth.key {{.HOST}}:/etc/tailscale/tailscale-auth.key
-      - scp foundry-cloudflared-tunnel.json {{.HOST}}:/etc/cloudflared/foundry-tunnel.json
-      # Set permissions
-      - ssh {{.HOST}} "chmod 600 /etc/tailscale/tailscale-auth.key /etc/cloudflared/foundry-tunnel.json"
-      - ssh {{.HOST}} "chown -R tailscale:tailscale /etc/tailscale"
-      - ssh {{.HOST}} "chown -R cloudflared:cloudflared /etc/cloudflared"
-      - ssh {{.HOST}} "chown -R foundry:foundry /etc/foundry"
-      - echo "✅ Foundry secrets loaded successfully"

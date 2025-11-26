@@ -1,0 +1,38 @@
+version: "3"
+
+tasks:
+  nix:build:
+    desc: Build both NixOS images (gatus and foundry)
+    cmds:
+      - task: nix:build:gatus
+      - task: nix:build:foundry
+
+  nix:build:gatus:
+    desc: Build the Gatus monitoring image
+    cmds:
+      - nix build .#nixosConfigurations.gatus.config.system.build.digitalOceanImage --system x86_64-linux
+
+  nix:build:foundry:
+    desc: Build the Foundry VTT image
+    cmds:
+      - nix build .#nixosConfigurations.foundry.config.system.build.digitalOceanImage --system x86_64-linux
+
+  nix:deploy:
+    desc: Deploy both NixOS configurations (gatus and foundry)
+    cmds:
+      - deploy path:.#
+
+  nix:deploy:gatus:
+    desc: Deploy only Gatus configuration
+    cmds:
+      - deploy path:.#gatus
+
+  nix:deploy:foundry:
+    desc: Deploy only Foundry configuration
+    cmds:
+      - deploy path:.#foundry
+
+  nix:cache:
+    desc: Cache build products and dependencies
+    cmds:
+      - ./scripts/cache

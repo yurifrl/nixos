@@ -1,0 +1,31 @@
+version: "3"
+
+tasks:
+  ssh:generate:
+    desc: Generate new SSH keys for deployment
+    dir: ./secrets/deploy-key
+    cmds:
+      - ssh-keygen -t ed25519 -C "github-actions-deploy" -f ./deploy-key -N ""
+      - ssh-keyscan -t ed25519 "{{.GATUS_TAILSCALE_HOST}}" > ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.GATUS_DROPLET_IP}}" >> ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.FOUNDRY_TAILSCALE_HOST}}" >> ./known_hosts
+      - ssh-keyscan -t ed25519 "{{.FOUNDRY_DROPLET_IP}}" >> ./known_hosts
+      - |
+        echo "✨ Keys generated successfully!"
+        echo ""
+        echo "🔑 Private Key (add to GitHub secret DEPLOY_SSH_KEY):"
+        echo "----------------------------------------"
+        cat ./deploy-key
+        echo "----------------------------------------"
+        echo ""
+        echo "🔐 Public Key (add to NixOS config users/root.nix):"
+        echo "----------------------------------------"
+        cat ./deploy-key.pub
+        echo "----------------------------------------"
+        echo ""
+        echo "🌐 Known Hosts (for reference):"
+        echo "----------------------------------------"
+        cat ./known_hosts
+        echo "----------------------------------------"
+        echo ""
+        echo "📍 Add to: https://github.com/yurifrl/nixos/settings/secrets/actions"

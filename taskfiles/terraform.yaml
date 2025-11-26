@@ -1,0 +1,56 @@
+version: "3"
+
+tasks:
+  tf:init:
+    desc: Initialize terraform
+    dir: ./terraform
+    cmds:
+      - terraform init
+
+  tf:plan:
+    desc: Plan terraform changes
+    dir: ./terraform
+    cmds:
+      - terraform plan
+
+  tf:sync:
+    desc: Sync terraform outputs to 1Password
+    dir: ./terraform
+    cmds:
+      - |
+        echo "📝 Syncing terraform outputs to 1Password..."
+        GATUS_IP=$(terraform output -raw gatus_droplet_ip)
+        FOUNDRY_IP=$(terraform output -raw foundry_droplet_ip)
+
+        echo "Gatus IP: $GATUS_IP"
+        echo "Foundry IP: $FOUNDRY_IP"
+
+        op item edit nixos --vault kubernetes \
+          GATUS_DROPLET_IP[password]="$GATUS_IP" \
+          FOUNDRY_DROPLET_IP[password]="$FOUNDRY_IP"
+
+        echo "📦 Updating deploy.json..."
+        cd ..
+        op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
+        jq ".nodes.gatus.hostname = \"$GATUS_IP\" | .nodes.foundry.hostname = \"$FOUNDRY_IP\"" deploy.json > deploy.json.tmp
+        mv deploy.json.tmp deploy.json
+
+        cat deploy.json | op item edit nixos --vault kubernetes deploy.json[file]=-
+
+        echo "✅ 1Password updated successfully!"
+        echo "   Gatus: $GATUS_IP"
+        echo "   Foundry: $FOUNDRY_IP"
+
+  tf:apply:
+    desc: Apply terraform and update 1Password with outputs
+    dir: ./terraform
+    cmds:
+      - echo "🚀 Applying terraform..."
+      - terraform apply
+      - task: tf:sync
+
+  tf:destroy:
+    desc: Destroy terraform resources
+    dir: ./terraform
+    cmds:
+      - terraform destroy

@@ -44,7 +44,7 @@ resource "digitalocean_volume" "foundry_data" {
 
 # Droplet
 resource "digitalocean_droplet" "foundry" {
-  name   = "foundry"
+  name   = "digitalocean-foundry-01"
   region = "nyc1"
   size   = "s-1vcpu-512mb-10gb"
   image  = data.digitalocean_image.nixos_foundry.id

@@ -5,6 +5,7 @@ foo
 result
 secrets.*
 secrets
+!taskfiles/secrets.yaml
 .DS_Store
 result-*
 service-monitor/secrets

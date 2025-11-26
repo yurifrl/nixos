@@ -44,7 +44,7 @@ resource "digitalocean_volume" "gatus_data" {
 
 # Droplet for gatus
 resource "digitalocean_droplet" "gatus" {
-  name   = "digitalocean-nixos-gatus"
+  name   = "digitalocean-gatus-01"
   region = "nyc1"
   size   = "s-1vcpu-512mb-10gb"
   image  = data.digitalocean_image.nixos_gatus.id
