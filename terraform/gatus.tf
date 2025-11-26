@@ -1,6 +1,11 @@
-# Reference existing NixOS image for gatus
+# Get latest NixOS Gatus image name dynamically
+data "external" "latest_gatus_image" {
+  program = ["${path.module}/../scripts/get-latest-image", "gatus"]
+}
+
+# Reference the latest custom NixOS Gatus image
 data "digitalocean_image" "nixos_gatus" {
-  name = "nixos-gatus-20251121-035348.qcow2.bz2"
+  name = data.external.latest_gatus_image.result.image_name
 }
 
 # Firewall for gatus

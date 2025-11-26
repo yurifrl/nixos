@@ -1,6 +1,11 @@
-# Reference existing custom NixOS Foundry image
+# Get latest NixOS Foundry image name dynamically
+data "external" "latest_foundry_image" {
+  program = ["${path.module}/../scripts/get-latest-image", "foundry"]
+}
+
+# Reference the latest custom NixOS Foundry image
 data "digitalocean_image" "nixos_foundry" {
-  name = "nixos-foundry-20251121-035444.qcow2.bz2"
+  name = data.external.latest_foundry_image.result.image_name
 }
 
 # Firewall
