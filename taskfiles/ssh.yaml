@@ -1,7 +1,7 @@
 version: "3"
 
 tasks:
-  ssh:generate:
+  generate:
     desc: Generate new SSH keys for deployment
     dir: ./secrets/deploy-key
     cmds:

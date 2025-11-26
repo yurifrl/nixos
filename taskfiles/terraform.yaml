@@ -1,19 +1,19 @@
 version: "3"
 
 tasks:
-  tf:init:
+  init:
     desc: Initialize terraform
     dir: ./terraform
     cmds:
       - terraform init
 
-  tf:plan:
+  plan:
     desc: Plan terraform changes
     dir: ./terraform
     cmds:
       - terraform plan
 
-  tf:sync:
+  sync:
     desc: Sync terraform outputs to 1Password
     dir: ./terraform
     cmds:
@@ -31,25 +31,26 @@ tasks:
 
         echo "📦 Updating deploy.json..."
         cd ..
-        op read "op://kubernetes/nixos/deploy.json" -f -o deploy.json
+        op read "op://kubernetes/nixos/GItHUB/deploy.json" -f -o deploy.json
         jq ".nodes.gatus.hostname = \"$GATUS_IP\" | .nodes.foundry.hostname = \"$FOUNDRY_IP\"" deploy.json > deploy.json.tmp
         mv deploy.json.tmp deploy.json
 
-        cat deploy.json | op item edit nixos --vault kubernetes deploy.json[file]=-
+        DEPLOY_JSON=$(cat deploy.json | jq -c .)
+        op item edit nixos --vault kubernetes "yhy7znjb6yif2hykklddrkm7oy[text]=$DEPLOY_JSON"
 
         echo "✅ 1Password updated successfully!"
         echo "   Gatus: $GATUS_IP"
         echo "   Foundry: $FOUNDRY_IP"
 
-  tf:apply:
+  apply:
     desc: Apply terraform and update 1Password with outputs
     dir: ./terraform
     cmds:
       - echo "🚀 Applying terraform..."
       - terraform apply
-      - task: tf:sync
+      - task: sync
 
-  tf:destroy:
+  destroy:
     desc: Destroy terraform resources
     dir: ./terraform
     cmds:
