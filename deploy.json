@@ -1,3 +1,14 @@
 {
-  
+ "nodes": {
+   "gatus": {
+     "hostname": "",
+     "tailscaleHostname": "digitalocean-gatus-01.tailcecc0.ts.net",
+     "sshUser": ""
+   },
+   "foundry": {
+     "hostname": "",
+     "tailscaleHostname": "digitalocean-foundry-01.tailcecc0.ts.net",
+     "sshUser": ""
+   }
+ }
 }
