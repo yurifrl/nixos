@@ -11,9 +11,13 @@ provider "digitalocean" {
   token = var.digitalocean_api_token
 }
 
-# Get current public IP automatically
+# Get current public IPv4 automatically
 data "http" "my_ip" {
-  url = "https://ifconfig.me/ip"
+  url = "https://api.ipify.org"
+}
+
+locals {
+  my_ip = sensitive(trimspace(data.http.my_ip.response_body))
 }
 
 # Use existing VPC Network

@@ -16,14 +16,14 @@
   system.activationScripts.foundryCloudflaredPerms = ''
     mkdir -p /etc/cloudflared
     chmod 755 /etc/cloudflared
-    chmod 644 /etc/cloudflared/foundry-tunnel.json || true
+    chmod 644 /etc/cloudflared/tunnel.json || true
   '';
 
   services.cloudflared = {
     enable = true;
     tunnels = {
       "8bc2858c-a6a4-474f-9287-5af2c1928578" = {
-        credentialsFile = "/etc/cloudflared/foundry-tunnel.json";
+        credentialsFile = "/etc/cloudflared/tunnel.json";
         ingress = {
           "rpg.syscd.live" = "http://localhost:30000";
         };

@@ -17,7 +17,7 @@ resource "digitalocean_firewall" "gatus" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
-    source_addresses = ["${trimspace(data.http.my_ip.response_body)}/32"]
+    source_addresses = ["${local.my_ip}/32"]
   }
 
   outbound_rule {
@@ -60,11 +60,13 @@ resource "digitalocean_droplet" "gatus" {
 
 # Outputs
 output "gatus_droplet_ip" {
-  value = digitalocean_droplet.gatus.ipv4_address
+  value     = digitalocean_droplet.gatus.ipv4_address
+  sensitive = true
 }
 
 output "gatus_droplet_private_ip" {
-  value = digitalocean_droplet.gatus.ipv4_address_private
+  value     = digitalocean_droplet.gatus.ipv4_address_private
+  sensitive = true
 }
 
 output "gatus_volume_id" {

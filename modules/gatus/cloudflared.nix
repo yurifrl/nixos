@@ -15,14 +15,14 @@
   system.activationScripts.cloudflaredPerms = ''
     mkdir -p /etc/cloudflared
     chmod 755 /etc/cloudflared
-    chmod 644 /etc/cloudflared/config.json || true
+    chmod 644 /etc/cloudflared/tunnel.json || true
   '';
 
   services.cloudflared = {
     enable = true;
     tunnels = {
       "3b90d790-0a11-46ae-9421-d195cc828947" = {
-        credentialsFile = "/etc/cloudflared/config.json";
+        credentialsFile = "/etc/cloudflared/tunnel.json";
         ingress = {
           "up.syscd.live" = "http://localhost:8080";
           "gatus.syscd.live" = "http://localhost:8080";
