@@ -40,6 +40,10 @@ resource "digitalocean_volume" "gatus_data" {
   size                    = 50 # GB
   initial_filesystem_type = "ext4"
   description             = "Gatus data volume"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Droplet for gatus

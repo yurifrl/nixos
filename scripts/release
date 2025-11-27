@@ -117,39 +117,6 @@ Format:
         return None
 
 
-def commit_and_push(image: str, version: str, changelog: str, push: bool) -> None:
-    """Commit changes and optionally push."""
-    commit_msg = f"""chore({image}): bump to v{version}
-
-{changelog}"""
-
-    # Stage changes
-    run_cmd(f"git add {image}.version")
-    run_cmd("git add -u")
-
-    # Commit with generated changelog
-    with open('/tmp/commit_msg', 'w') as f:
-        f.write(commit_msg)
-    run_cmd("git commit -F /tmp/commit_msg")
-
-    console.print(f"\n[green]✅ Committed[/green]")
-
-    if push:
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=console,
-        ) as progress:
-            progress.add_task("🚀 Pushing to GitHub...", total=None)
-            run_cmd("git push", capture=False)
-
-        console.print(f"\n[green]✅ Pushed to GitHub![/green]")
-        console.print(f"[cyan]🔗 Watch build: https://github.com/yurifrl/nixos/actions[/cyan]")
-    else:
-        console.print(f"\n[yellow]📝 Changes committed locally (not pushed)[/yellow]")
-        console.print("[dim]Run 'git push' when ready to trigger build[/dim]")
-
-
 def main():
     """Main interactive flow."""
     console.clear()
@@ -177,6 +144,7 @@ def main():
         sys.exit(0)
 
     # Process each image
+    releases = []
     for image in images:
         console.print(f"\n[bold magenta]{'='*60}[/bold magenta]")
         console.print(f"[bold cyan]📦 Releasing: {image}[/bold cyan]")
@@ -209,83 +177,113 @@ def main():
         console.print(f"[green]✅ New version:[/green] [bold green]{new_version}[/bold green]\n")
         write_version(image, new_version)
 
-        # Step 3: Generate changelog
-        status, diff = get_git_changes()
+        releases.append({'image': image, 'current': current_version, 'new': new_version})
 
-        if not diff:
-            console.print("[yellow]⚠️  No changes detected in git diff[/yellow]")
-            changelog = questionary.text(
-                "Enter changelog manually:",
-                multiline=True,
-                style=custom_style,
-            ).ask()
-        else:
-            use_ai = questionary.confirm(
-                "Generate changelog with AI?",
-                default=True,
-                style=custom_style,
-            ).ask()
+        if len(images) > 1:
+            console.print(f"\n[dim]{'─'*60}[/dim]")
 
-            if use_ai:
-                with Progress(
-                    SpinnerColumn(),
-                    TextColumn("[progress.description]{task.description}"),
-                    console=console,
-                ) as progress:
-                    progress.add_task("🤖 Generating changelog with AI...", total=None)
-                    changelog = generate_changelog(image, new_version, status, diff)
+    # Step 3: Generate changelog once for all releases
+    status, diff = get_git_changes()
 
-                if changelog:
-                    console.print("\n[bold]📝 Generated Changelog:[/bold]")
-                    console.print(Panel(changelog, border_style="green"))
+    if not diff:
+        console.print("[yellow]⚠️  No changes detected in git diff[/yellow]")
+        changelog = questionary.text(
+            "Enter changelog manually:",
+            multiline=True,
+            style=custom_style,
+        ).ask()
+    else:
+        use_ai = questionary.confirm(
+            "Generate changelog with AI?",
+            default=True,
+            style=custom_style,
+        ).ask()
 
-                    accept = questionary.confirm(
-                        "Use this changelog?",
-                        default=True,
-                        style=custom_style,
-                    ).ask()
+        if use_ai:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                console=console,
+            ) as progress:
+                progress.add_task("🤖 Generating changelog with AI...", total=None)
+                releases_info = "\n".join([f"{r['image']}: {r['new']}" for r in releases])
+                changelog = generate_changelog(", ".join(images), releases_info, status, diff)
 
-                    if not accept:
-                        changelog = questionary.text(
-                            "Enter custom changelog:",
-                            default=changelog,
-                            multiline=True,
-                            style=custom_style,
-                        ).ask()
-                else:
-                    console.print("[yellow]⚠️  AI generation failed[/yellow]")
+            if changelog:
+                console.print("\n[bold]📝 Generated Changelog:[/bold]")
+                console.print(Panel(changelog, border_style="green"))
+
+                accept = questionary.confirm(
+                    "Use this changelog?",
+                    default=True,
+                    style=custom_style,
+                ).ask()
+
+                if not accept:
                     changelog = questionary.text(
-                        "Enter changelog manually:",
+                        "Enter custom changelog:",
+                        default=changelog,
                         multiline=True,
                         style=custom_style,
                     ).ask()
             else:
+                console.print("[yellow]⚠️  AI generation failed[/yellow]")
                 changelog = questionary.text(
                     "Enter changelog manually:",
                     multiline=True,
                     style=custom_style,
                 ).ask()
+        else:
+            changelog = questionary.text(
+                "Enter changelog manually:",
+                multiline=True,
+                style=custom_style,
+            ).ask()
 
-        # Step 4: Review and confirm
-        console.print("\n[bold]📋 Release Summary:[/bold]")
-        table = Table(show_header=False, box=None, padding=(0, 2))
-        table.add_row("[cyan]Image:[/cyan]", f"[bold]{image}[/bold]")
-        table.add_row("[cyan]Version:[/cyan]", f"[yellow]{current_version}[/yellow] → [green]{new_version}[/green]")
-        table.add_row("[cyan]Changelog:[/cyan]", changelog)
-        console.print(table)
-        console.print()
+    # Step 4: Review and confirm
+    console.print("\n[bold]📋 Release Summary:[/bold]")
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    for release in releases:
+        table.add_row(f"[cyan]{release['image']}:[/cyan]", f"[yellow]{release['current']}[/yellow] → [green]{release['new']}[/green]")
+    table.add_row("[cyan]Changelog:[/cyan]", changelog)
+    console.print(table)
+    console.print()
 
-        push = questionary.confirm(
-            "Commit and push to GitHub?",
-            default=True,
-            style=custom_style,
-        ).ask()
+    push = questionary.confirm(
+        "Commit and push to GitHub?",
+        default=True,
+        style=custom_style,
+    ).ask()
 
-        # Execute
-        commit_and_push(image, new_version, changelog, push)
+    # Execute single commit
+    commit_msg = f"""chore({', '.join([r['image'] for r in releases])}): bump versions
 
-        if len(images) > 1:
-            console.print(f"\n[dim]{'─'*60}[/dim]")
+{changelog}"""
+
+    for release in releases:
+        run_cmd(f"git add {release['image']}.version")
+    run_cmd("git add -u")
+
+    with open('/tmp/commit_msg', 'w') as f:
+        f.write(commit_msg)
+    run_cmd("git commit -F /tmp/commit_msg")
+
+    console.print(f"\n[green]✅ Committed[/green]")
+
+    if push:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            progress.add_task("🚀 Pushing to GitHub...", total=None)
+            run_cmd("git push", capture=False)
+
+        console.print(f"\n[green]✅ Pushed to GitHub![/green]")
+        console.print(f"[cyan]🔗 Watch build: https://github.com/yurifrl/nixos/actions[/cyan]")
+    else:
+        console.print(f"\n[yellow]📝 Changes committed locally (not pushed)[/yellow]")
+        console.print("[dim]Run 'git push' when ready to trigger build[/dim]")
 
     # Final summary
     console.print("\n" + "="*60)
@@ -315,19 +313,37 @@ def quick_release():
         console.print("[yellow]No images selected.[/yellow]")
         sys.exit(0)
 
+    # Process all version bumps
+    releases = []
     for image in images:
         current = read_version(image)
         new = bump_version(current, 'patch')
 
         console.print(f"[cyan]{image}:[/cyan] {current} → {new}")
         write_version(image, new)
+        releases.append({'image': image, 'current': current, 'new': new})
 
-        # Generate changelog
-        status, diff = get_git_changes()
-        changelog = generate_ai_changelog(image, new, status, diff) if diff else "- Patch release"
+    # Generate single changelog
+    status, diff = get_git_changes()
+    if diff:
+        releases_info = "\n".join([f"{r['image']}: {r['current']} → {r['new']}" for r in releases])
+        changelog = generate_changelog(", ".join(images), releases_info, status, diff) or "- Patch release"
+    else:
+        changelog = "- Patch release"
 
-        # Commit and push
-        commit_and_push(image, new, changelog, push=True)
+    # Single commit for all releases
+    commit_msg = f"""chore({', '.join(images)}): bump versions
+
+{changelog}"""
+
+    for release in releases:
+        run_cmd(f"git add {release['image']}.version")
+    run_cmd("git add -u")
+
+    with open('/tmp/commit_msg', 'w') as f:
+        f.write(commit_msg)
+    run_cmd("git commit -F /tmp/commit_msg")
+    run_cmd("git push", capture=False)
 
     console.print("\n[green]✅ Quick release complete![/green]")
 
