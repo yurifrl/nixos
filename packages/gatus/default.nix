@@ -4,7 +4,7 @@
 }:
 buildGoModule rec {
   pname = "gatus";
-  version = "5.33.0";
+  version = "5.33.1";
 
   src = fetchFromGitHub {
     owner = "TwiN";
