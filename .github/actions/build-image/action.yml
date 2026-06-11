@@ -21,7 +21,7 @@ runs:
         echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 
     - name: Cache Nix store
-      uses: nix-community/cache-nix-action@v6
+      uses: nix-community/cache-nix-action@v7
       with:
         primary-key: "${{ runner.os }}-nix-${{ inputs.image-name }}-${{ hashFiles('**/*.nix') }}"
         paths: |
