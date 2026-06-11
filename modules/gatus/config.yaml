@@ -139,7 +139,7 @@ alerting:
   discord:
     webhook-url: "$DISCORD_WEBHOOK_URL"
     default-alert:
-      send-on-resolved: true
+      send-on-resolved: false
       failure-threshold: 6
       success-threshold: 3
 
