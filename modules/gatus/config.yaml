@@ -27,6 +27,19 @@ endpoints:
     alerts:
       - type: discord 
 
+  - name: OBS Stream
+    group: Live
+    url: https://obs.syscd.live/obs/index.m3u8
+    interval: 10s
+    conditions:
+      - "[STATUS] == 302" # 302 = tunnel up (Cloudflare Access redirect); Error 1033 = 530
+      - "[RESPONSE_TIME] < 2000"
+    client:
+      ignore-redirect: true # don't follow to the Access login (that's a 200)
+    alerts:
+      - type: discord
+        failure-threshold: 30 # ~5min: macintel01 blips self-heal in 1-2min, only page on sustained outage
+
   - name: Alertmanager
     group: Tech
     url: https://alertmanager.syscd.tech/-/healthy
