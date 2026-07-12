@@ -74,6 +74,26 @@ endpoints:
     alerts:
       - type: discord
 
+  # Dead-man's-switch for VictoriaMetrics INGESTION (not just liveness). The
+  # /-/healthy check above stays 200 even when vmsingle flips to read-only on a
+  # full disk and silently stops ingesting - the exact failure that went
+  # undetected because the in-cluster disk alert is evaluated by vmalert against
+  # vmsingle itself (it can't alert on its own storage death). An external
+  # freshness query catches it: count(up) returns a non-empty result only while
+  # fresh samples land; a read-only / dead-ingestion vmsingle returns
+  # "result":[]. See .agents/postmortems/2026-07-11-vmsingle-storage-readonly.
+  - name: VictoriaMetrics Ingestion
+    group: Tech
+    url: "https://prometheus.syscd.tech/api/v1/query?query=count(up)"
+    interval: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 2000"
+      - '[BODY] == pat(*"result":[{*)' # non-empty vector; empty => ingestion dead/read-only
+    alerts:
+      - type: discord
+        failure-threshold: 30 # ~5min: ride out transient query blips, page on sustained ingestion loss
+
   - name: zigbee2mqtt
     group: Tech
     url: https://zigbee2mqtt.syscd.tech
@@ -96,6 +116,51 @@ endpoints:
       - "[BODY].proxy.kube.enabled == true"
     alerts:
       - type: discord
+
+  # Tailnet node reachability (gatus runs on digitalocean-gatus-01, itself on the
+  # tailnet). Catches a node silently leaving the tailnet while still k8s-Ready.
+  # See .agents/postmortems/2026-07-05-pc01-tailscale-flag-drift-crashloop/PM.md
+  # failure-threshold 12 (~2min at 10s) rides out reboots/re-renders.
+  # Roaming laptops (macarm01/macintel01) excluded on purpose - they go offline.
+  - name: Tailnet pc01
+    group: Tech
+    url: icmp://100.101.182.40
+    interval: 10s
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: discord
+        failure-threshold: 12
+
+  - name: Tailnet dell01
+    group: Tech
+    url: icmp://100.82.148.37
+    interval: 10s
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: discord
+        failure-threshold: 12
+
+  - name: Tailnet tp1
+    group: Tech
+    url: icmp://100.90.9.55
+    interval: 10s
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: discord
+        failure-threshold: 12
+
+  - name: Tailnet tp4
+    group: Tech
+    url: icmp://100.112.10.120
+    interval: 10s
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: discord
+        failure-threshold: 12
 
   # Httpbin
   - name: Httpbin Cloudflare NO Token
