@@ -75,21 +75,25 @@ endpoints:
       - type: discord
 
   # Dead-man's-switch for VictoriaMetrics INGESTION (not just liveness). The
-  # /-/healthy check above stays 200 even when vmsingle flips to read-only on a
-  # full disk and silently stops ingesting - the exact failure that went
-  # undetected because the in-cluster disk alert is evaluated by vmalert against
-  # vmsingle itself (it can't alert on its own storage death). An external
-  # freshness query catches it: count(up) returns a non-empty result only while
-  # fresh samples land; a read-only / dead-ingestion vmsingle returns
-  # "result":[]. See .agents/postmortems/2026-07-11-vmsingle-storage-readonly.
+  # /-/healthy check stays 200 even when vmsingle flips to read-only on a full
+  # disk and silently stops ingesting - the failure that went undetected because
+  # the in-cluster disk alert is evaluated by vmalert against vmsingle itself. An
+  # external freshness query catches it: count(up) returns a non-empty result
+  # only while fresh samples land; a read-only / dead vmsingle returns
+  # "result":[]. Uses syscd.live (Cloudflare Access) because syscd.tech does not
+  # resolve for tailnet nodes (bind9 only serves syscd.dev).
+  # See .agents/postmortems/2026-07-11-vmsingle-storage-readonly.
   - name: VictoriaMetrics Ingestion
-    group: Tech
-    url: "https://prometheus.syscd.tech/api/v1/query?query=count(up)"
+    group: Live
+    url: "https://prometheus.syscd.live/api/v1/query?query=count(up)"
     interval: 10s
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
       - '[BODY] == pat(*"result":[{*)' # non-empty vector; empty => ingestion dead/read-only
+    headers:
+      "CF-Access-Client-Id": "$CF_ACCESS_CLIENT_ID"
+      "CF-Access-Client-Secret": "$CF_ACCESS_CLIENT_SECRET"
     alerts:
       - type: discord
         failure-threshold: 30 # ~5min: ride out transient query blips, page on sustained ingestion loss
