@@ -85,12 +85,12 @@ endpoints:
   # See .agents/postmortems/2026-07-11-vmsingle-storage-readonly.
   - name: VictoriaMetrics Ingestion
     group: Live
-    url: "https://prometheus.syscd.live/api/v1/query?query=count(up)"
+    url: "https://prometheus.syscd.live/api/v1/query?query=count%28up%29"
     interval: 10s
     conditions:
       - "[STATUS] == 200"
       - "[RESPONSE_TIME] < 2000"
-      - '[BODY] == pat(*"result":[{*)' # non-empty vector; empty => ingestion dead/read-only
+      - "[BODY].data.result[0].value[1] > 0" # non-empty vector w/ a live count; empty result => ingestion dead/read-only
     headers:
       "CF-Access-Client-Id": "$CF_ACCESS_CLIENT_ID"
       "CF-Access-Client-Secret": "$CF_ACCESS_CLIENT_SECRET"
