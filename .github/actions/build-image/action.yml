@@ -74,7 +74,11 @@ runs:
         NIXOS_IMAGE_NAME="${{ inputs.object-name }}"
         echo "NIXOS_IMAGE_NAME=$NIXOS_IMAGE_NAME" >> $GITHUB_ENV
 
-        cp result/*qcow2.bz2 "$NIXOS_IMAGE_NAME"
+        SRC=$(ls result/*qcow2.bz2)
+        case "$NIXOS_IMAGE_NAME" in
+          *.bz2) cp "$SRC" "$NIXOS_IMAGE_NAME" ;;
+          *)     echo "decompressing (import content type needs uncompressed qcow2)..."; bunzip2 -c "$SRC" > "$NIXOS_IMAGE_NAME" ;;
+        esac
 
         if [ ! -f "$NIXOS_IMAGE_NAME" ]; then
           echo "Error: Failed to copy nixos image file"

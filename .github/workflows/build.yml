@@ -52,7 +52,9 @@ jobs:
           V=$(cat "${{ matrix.image }}.version")
           echo "version=$V" >> "$GITHUB_OUTPUT"
           if [[ "${{ matrix.versioned }}" == "true" ]]; then
-            echo "object-name=${{ matrix.image }}-${V}.qcow2.bz2" >> "$GITHUB_OUTPUT"
+            # Proxmox `import` content type can't decompress on download, so
+            # versioned (proxmox) images are published UNCOMPRESSED.
+            echo "object-name=${{ matrix.image }}-${V}.qcow2" >> "$GITHUB_OUTPUT"
           else
             echo "object-name=nixos-${{ matrix.image }}-$(date +%Y%m%d-%H%M%S).qcow2.bz2" >> "$GITHUB_OUTPUT"
           fi
