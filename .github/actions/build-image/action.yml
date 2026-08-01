@@ -1,10 +1,21 @@
 name: 'Build NixOS Image'
-description: 'Build and upload NixOS image to DigitalOcean'
+description: 'Build a NixOS image and upload it to GCS (optionally register a DigitalOcean image)'
 
 inputs:
   image-name:
-    description: 'Name of the image to build (gatus or foundry)'
+    description: 'NixOS configuration to build (gatus, foundry, workstation)'
     required: true
+  build-target:
+    description: 'system.build attribute to build (digitalOceanImage or proxmoxImage)'
+    required: false
+    default: 'digitalOceanImage'
+  object-name:
+    description: 'GCS object basename to upload the qcow2.bz2 as'
+    required: true
+  create-do-image:
+    description: 'Whether to register a DigitalOcean custom image from the upload'
+    required: false
+    default: 'true'
 
 runs:
   using: composite
@@ -36,8 +47,8 @@ runs:
     - name: Build NixOS Image
       shell: bash
       run: |
-        echo "Building ${{ inputs.image-name }} image..."
-        nix build .#nixosConfigurations.${{ inputs.image-name }}.config.system.build.digitalOceanImage
+        echo "Building ${{ inputs.image-name }} (${{ inputs.build-target }})..."
+        nix build .#nixosConfigurations.${{ inputs.image-name }}.config.system.build.${{ inputs.build-target }}
 
     - name: Google Auth
       id: auth
@@ -57,31 +68,24 @@ runs:
         echo "[GSUtil]
         parallel_composite_upload_threshold = 150M" > ~/.boto
 
-    - name: Upload to GCS and create image
+    - name: Upload to GCS
       shell: bash
       run: |
-        NIXOS_IMAGE_NAME="nixos-${{ inputs.image-name }}-$(date +%Y%m%d-%H%M%S).qcow2.bz2"
+        NIXOS_IMAGE_NAME="${{ inputs.object-name }}"
         echo "NIXOS_IMAGE_NAME=$NIXOS_IMAGE_NAME" >> $GITHUB_ENV
 
-        cp result/*qcow2.bz2 nixos-${{ inputs.image-name }}.qcow2.bz2
+        cp result/*qcow2.bz2 "$NIXOS_IMAGE_NAME"
 
-        if [ ! -f nixos-${{ inputs.image-name }}.qcow2.bz2 ]; then
+        if [ ! -f "$NIXOS_IMAGE_NAME" ]; then
           echo "Error: Failed to copy nixos image file"
           ls -la result/
           exit 1
         fi
 
-        echo "✅ Found image file: nixos-${{ inputs.image-name }}.qcow2.bz2"
-        echo "📦 Image name: $NIXOS_IMAGE_NAME"
+        echo "✅ Found image file: $NIXOS_IMAGE_NAME"
         echo "☁️  GCS Bucket: ${{ env.GCS_BUCKET_NAME }}"
 
-        gsutil cp -v nixos-${{ inputs.image-name }}.qcow2.bz2 "gs://${{ env.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
-
-        if [ $? -ne 0 ]; then
-          echo "❌ Error: Failed to upload to GCS"
-          exit 1
-        fi
-
+        gsutil cp -v "$NIXOS_IMAGE_NAME" "gs://${{ env.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
         gsutil acl ch -u AllUsers:R "gs://${{ env.GCS_BUCKET_NAME }}/${NIXOS_IMAGE_NAME}"
 
         IMAGE_URL="https://storage.googleapis.com/${{ env.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME"
@@ -89,11 +93,13 @@ runs:
         echo "IMAGE_URL=$IMAGE_URL" >> $GITHUB_ENV
 
     - name: Install doctl
+      if: ${{ inputs.create-do-image == 'true' }}
       uses: digitalocean/action-doctl@v2
       with:
         token: "${{ env.DIGITALOCEAN_ACCESS_TOKEN }}"
 
     - name: Create DigitalOcean Image
+      if: ${{ inputs.create-do-image == 'true' }}
       shell: bash
       run: |
         doctl compute image create "$NIXOS_IMAGE_NAME" \
@@ -106,6 +112,6 @@ runs:
       run: |
         echo "## ✅ Build Complete: ${{ inputs.image-name }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Image Name:** \`$NIXOS_IMAGE_NAME\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Image Object:** \`$NIXOS_IMAGE_NAME\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Location:** [DigitalOcean Custom Images](https://cloud.digitalocean.com/images/custom_images)" >> $GITHUB_STEP_SUMMARY
+        echo "**GCS:** \`gs://${{ env.GCS_BUCKET_NAME }}/$NIXOS_IMAGE_NAME\`" >> $GITHUB_STEP_SUMMARY

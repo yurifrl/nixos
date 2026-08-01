@@ -13,8 +13,24 @@ permissions:
   contents: write
 
 jobs:
-  build-gatus:
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: gatus
+            build-target: digitalOceanImage
+            create-do-image: "true"
+            versioned: "false"
+          - image: foundry
+            build-target: digitalOceanImage
+            create-do-image: "true"
+            versioned: "false"
+          - image: workstation
+            build-target: proxmoxImage
+            create-do-image: "false"
+            versioned: "true"
     steps:
       - uses: actions/checkout@v6
         with:
@@ -23,16 +39,31 @@ jobs:
       - name: Check
         id: check
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || git diff --name-only HEAD~1 HEAD | grep -q "gatus.version"; then
-            echo "build=true" >> $GITHUB_OUTPUT
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || git diff --name-only HEAD~1 HEAD | grep -q "${{ matrix.image }}.version"; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
           else
-            echo "build=false" >> $GITHUB_OUTPUT
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute image metadata
+        if: steps.check.outputs.build == 'true'
+        id: meta
+        run: |
+          V=$(cat "${{ matrix.image }}.version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if [[ "${{ matrix.versioned }}" == "true" ]]; then
+            echo "object-name=${{ matrix.image }}-${V}.qcow2.bz2" >> "$GITHUB_OUTPUT"
+          else
+            echo "object-name=nixos-${{ matrix.image }}-$(date +%Y%m%d-%H%M%S).qcow2.bz2" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: ./.github/actions/build-image
         if: steps.check.outputs.build == 'true'
         with:
-          image-name: gatus
+          image-name: ${{ matrix.image }}
+          build-target: ${{ matrix.build-target }}
+          object-name: ${{ steps.meta.outputs.object-name }}
+          create-do-image: ${{ matrix.create-do-image }}
         env:
           DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
           WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
@@ -44,43 +75,7 @@ jobs:
       - name: Release
         if: steps.check.outputs.build == 'true'
         run: |
-          V=$(cat gatus.version)
-          gh release create "gatus-v${V}" --title "Gatus v${V}" --notes "Built from ${{ github.sha }}" || true
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-  build-foundry:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 2
-
-      - name: Check
-        id: check
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || git diff --name-only HEAD~1 HEAD | grep -q "foundry.version"; then
-            echo "build=true" >> $GITHUB_OUTPUT
-          else
-            echo "build=false" >> $GITHUB_OUTPUT
-          fi
-
-      - uses: ./.github/actions/build-image
-        if: steps.check.outputs.build == 'true'
-        with:
-          image-name: foundry
-        env:
-          DEPLOY_NIX_JSON: ${{ secrets.DEPLOY_NIX_JSON }}
-          WIF_PROVIDER: ${{ secrets.WIF_PROVIDER }}
-          WIF_SERVICE_ACCOUNT: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GCS_BUCKET_NAME: ${{ secrets.GCS_BUCKET_NAME }}
-          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Release
-        if: steps.check.outputs.build == 'true'
-        run: |
-          V=$(cat foundry.version)
-          gh release create "foundry-v${V}" --title "Foundry v${V}" --notes "Built from ${{ github.sha }}" || true
+          V=${{ steps.meta.outputs.version }}
+          gh release create "${{ matrix.image }}-v${V}" --title "${{ matrix.image }} v${V}" --notes "Built from ${{ github.sha }}" || true
         env:
           GH_TOKEN: ${{ github.token }}

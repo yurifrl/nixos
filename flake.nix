@@ -39,6 +39,20 @@
           ./hardware.nix
         ];
       };
+
+      # Workstation dev VM (Proxmox). Brings its own Proxmox hardware/image
+      # module, so ./hardware.nix (DigitalOcean) is intentionally omitted.
+      # qcow2 build target:
+      #   nix build .#nixosConfigurations.workstation.config.system.build.proxmoxImage
+      workstation = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          inherit inputs nixpkgs;
+        };
+        modules = [
+          ./configuration-workstation.nix
+        ];
+      };
     };
 
     deploy = {
