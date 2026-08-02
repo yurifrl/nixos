@@ -25,8 +25,6 @@
     neovim
     lazygit
     uv
-    go-task
-    tilt
 
     # === From Brewfile (verified against pinned nixpkgs, x86_64-linux) ===
 
@@ -72,17 +70,12 @@
     jujutsu
 
     # Dev/build tooling & languages
-    llvm
-    cmake
-    ninja
-    tree-sitter
-    protobuf
+    # Dev/build (light; heavy toolchains — rust, llvm, cmake, ninja, tree-sitter,
+    # protobuf, qmk — install per-project via mise, not baked into the image)
     yamlfmt
     gnupg
     dfu-util
-    qmk
     esptool
-    rustup
     pipenv
     pnpm
     prettier
@@ -90,45 +83,21 @@
     pre-commit
     just
 
-    # AI / LLM CLIs
+    # AI / LLM CLIs (ollama + aider dropped: multi-GB; run via mise/uv on demand)
     gemini-cli
-    ollama
     mods
-    aider-chat
     opencode
     crush
 
-    # Kubernetes / cloud / infra CLIs
+    # Kubernetes helpers (kubectl + helm are in base above; argocd/velero/istioctl/
+    # talosctl/terraform/awscli/gcloud/etc install via mise)
     kubectx
-    kubebuilder
-    helm-docs
-    istioctl
-    argocd
-    velero
-    terraform # unfree (BSL)
-    terragrunt
-    atmos
-    awscli2
-    doctl
-    cloudflared
-    talosctl
-    google-cloud-sdk
-    databricks-cli
-    process-compose
-    k6
 
-    # Databases (server + client)
-    postgresql_14
-    mysql80
-    redis
-    percona-toolkit
-
-    # Data / formats
+    # Data / formats (kafka dropped: pulls a JDK)
     yq-go
     jsonnet
     jnv
     pandoc
-    apacheKafka
     d2
     marp-cli
 
