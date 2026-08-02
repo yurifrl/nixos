@@ -8,6 +8,7 @@
   imports = [
     ./modules/shared/ssh.nix
     ./users/root.nix
+    ./users/yuri-workstation.nix
     ./modules/workstation
     ./modules/workstation/hardware-proxmox.nix
   ];
