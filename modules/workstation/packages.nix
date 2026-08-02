@@ -25,6 +25,8 @@
     neovim
     lazygit
     uv
+    go-task
+    tilt
 
     # === From Brewfile (verified against pinned nixpkgs, x86_64-linux) ===
 
