@@ -17,4 +17,12 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvaTuBhwuQHdjIP1k9YQk9YMqmGiOate19iXe6T4IL/" # Local (same key as root)
     ];
   };
+
+  # kubectl works with zero env setup: point ~/.kube/config at the world-readable
+  # k3s kubeconfig. Robust across all shells/contexts (env vars don't reach fish
+  # reliably on NixOS).
+  systemd.tmpfiles.rules = [
+    "d /home/yuri-workstation/.kube 0700 yuri-workstation users -"
+    "L+ /home/yuri-workstation/.kube/config - - - - /etc/rancher/k3s/k3s.yaml"
+  ];
 }
