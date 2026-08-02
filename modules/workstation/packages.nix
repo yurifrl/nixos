@@ -23,6 +23,7 @@
     ripgrep
     fd
     neovim
+    vim
     lazygit
     uv
     go-task

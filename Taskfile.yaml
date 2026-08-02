@@ -9,6 +9,12 @@ includes:
   tf: ./taskfiles/terraform.yaml
 
 tasks:
+  rebuild:
+    desc: 🔁 Pull latest and nixos-rebuild switch for THIS host (run on the box as root)
+    cmds:
+      - git pull --ff-only
+      - nixos-rebuild switch --flake ".#$(hostname)"
+
   release:
     desc: 🚀 Interactive release - beautiful TUI for version bumps + AI changelogs
     cmds:
