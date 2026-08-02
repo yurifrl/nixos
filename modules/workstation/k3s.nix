@@ -9,8 +9,9 @@
     extraFlags = "--write-kubeconfig-mode=0644";
   };
 
-  # Point every login shell at the local cluster so `kubectl` works without setup.
-  environment.sessionVariables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+  # Point every shell at the local cluster so `kubectl` works without setup.
+  # environment.variables (not sessionVariables) so it reaches fish too.
+  environment.variables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
 
   # k3s API server.
   networking.firewall.allowedTCPPorts = [ 6443 ];
