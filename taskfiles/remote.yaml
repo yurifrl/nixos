@@ -1,0 +1,17 @@
+# Run FROM this Mac against the workstation VM over SSH.
+# Each task sshes in and invokes the matching local task on the box.
+version: "3"
+
+vars:
+  HOST: '{{.HOST | default "workstation"}}'
+
+tasks:
+  rebuild:
+    desc: 🔁 Rebuild the workstation from here (ssh as root → task rebuild on the box)
+    cmds:
+      - ssh root@{{.HOST}} "cd /root/nixos && git pull --ff-only && task rebuild"
+
+  ssh-agent-setup:
+    desc: 🔑 Refresh the forwarded SSH agent socket on the workstation from here
+    cmds:
+      - ssh yuri-workstation@{{.HOST}} "cd ~/nixos && git pull --ff-only && task ssh-agent-setup"

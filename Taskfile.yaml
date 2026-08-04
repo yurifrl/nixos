@@ -3,11 +3,13 @@ version: "3"
 dotenv: [.env]
 
 includes:
+  remote: ./taskfiles/remote.yaml
   nix: ./taskfiles/nix.yaml
   secrets: ./taskfiles/secrets.yaml
   ssh: ./taskfiles/ssh.yaml
   tf: ./taskfiles/terraform.yaml
 
+# Top-level tasks run LOCALLY on the VM. From-the-Mac wrappers live under remote:*
 tasks:
   rebuild:
     desc: 🔁 Pull latest and nixos-rebuild switch for THIS host (run on the box as root)
@@ -15,7 +17,7 @@ tasks:
       - git pull --ff-only
       - nixos-rebuild switch --flake ".#$(hostname)"
 
-  agent:
+  ssh-agent-setup:
     desc: 🔑 Re-point ~/.ssh/agent.sock at the newest forwarded agent socket (fixes git after a herdr reconnect)
     cmds:
       - |
