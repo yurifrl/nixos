@@ -14,4 +14,12 @@
   ];
 
   networking.hostName = "workstation";
+
+  # Like a DigitalOcean droplet: allow username + password SSH login, in addition
+  # to key-based and Tailscale SSH. The box is only reachable over the LAN and the
+  # tailnet, and the root/yuri passwords are strong values provisioned from the
+  # 1Password `workstation` item via cloud-init. shared/ssh.nix disables password
+  # auth by default, so force it on for this host only.
+  services.openssh.settings.PasswordAuthentication = lib.mkForce true;
+  services.openssh.settings.PermitRootLogin = lib.mkForce "yes";
 }

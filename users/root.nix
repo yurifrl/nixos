@@ -8,9 +8,11 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICPvhdB5G3x/vLkM3wGQC+Ug0xHFCAVqAwCmNqRTFnM8 github-actions-deploy" # Github -> 45.55.248.197
     ];
 
-    # Hashed password for root console access
-    # openssl passwd -6 $PASSWORD | pbcopy
-    # password is in nixos-digitalocean in 1password
-    hashedPassword = "$6$/9pgra2Hke1H9KOs$GN7uc29RAj9gcjOJK7nlbBuLrrQZe6zT27l5bLg9FQIymCj3VaniOP/Brv/dWtR1Y0Fw0m3X8gpllb9RdT.rj/";
+    # No password baked into this (public) repo. The root password is provisioned
+    # at boot by cloud-init `chpasswd` from the 1Password `workstation` item
+    # (ROOT_PASSWORD), delivered as a $6$ hash via the crossplane workstation
+    # cloud-init snippet. With users.mutableUsers = true (default) NixOS leaves an
+    # undeclared password alone, so the cloud-init-set password persists across
+    # rebuilds. Key-based / Tailscale SSH still works even before cloud-init runs.
   };
 } 
