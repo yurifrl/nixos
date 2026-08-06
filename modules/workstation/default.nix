@@ -4,6 +4,7 @@
     ./docker.nix
     ./k3s.nix
     ./packages.nix
+    ./nix-ld.nix
     ./tailscale.nix
     ./cloud-init.nix
     ./self-rebuild.nix
