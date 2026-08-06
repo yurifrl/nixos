@@ -41,6 +41,17 @@
 
       herdr-phone =
         let
+          # The flake's pinned nixpkgs only ships Go up to 1.25, but herdr-phone's
+          # go.mod requires >= 1.26.5. Pin a scoped nixpkgs that has go_1_26 for the
+          # Go toolchain ONLY (the static CGO-free binary is self-contained), so the
+          # system nixpkgs is left untouched.
+          goPkgs = import
+            (builtins.fetchTarball {
+              url = "https://github.com/NixOS/nixpkgs/archive/b7c2ada94fe99c15b0dbcf4d11fd7850b957a436.tar.gz";
+              sha256 = "1hw875y585lkhygn09kcbmdgm58b0nb5k0d38qwlvfngprsnp2r0";
+            })
+            { system = prev.stdenv.hostPlatform.system; };
+
           src = prev.fetchFromGitHub {
             owner = "yurifrl";
             repo = "herdr-phone";
@@ -62,7 +73,8 @@
             '';
           };
         in
-        prev.buildGoModule {
+        # go.mod requires go >= 1.26.5; use the scoped nixpkgs' Go 1.26 toolchain.
+        (goPkgs.buildGoModule.override { go = goPkgs.go_1_26; }) {
           pname = "herdr-phone";
           version = "0.4.0";
           inherit src;

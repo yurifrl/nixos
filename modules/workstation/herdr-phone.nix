@@ -63,7 +63,18 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 8787;
-      description = "Loopback port the herdr-phone origin binds (the shared proxy forwards here).";
+      description = "Loopback port the herdr-phone origin binds (the LAN bridge forwards here).";
+    };
+
+    lanPort = lib.mkOption {
+      type = lib.types.port;
+      default = 8788;
+      description = ''
+        LAN port the herdr-phone origin is bridged onto for the in-cluster
+        apps-space cloudflared proxy (which reaches this box over the LAN at
+        192.168.68.118:<lanPort>). Must match the herdr entry in the apps map in
+        home-systems-values/apps-space/values.yaml.
+      '';
     };
 
     publicUrl = lib.mkOption {
@@ -143,5 +154,32 @@ in
         RestartSec = "5s";
       };
     };
+
+    # LAN bridge. herdr-phone binds loopback only (a hard security invariant of
+    # the relay), but the in-cluster apps-space cloudflared reaches this box over
+    # the LAN. Expose the loopback origin on the LAN via a plain TCP proxy
+    # (systemd-socket-proxyd, which passes WebSockets and the Access JWT header
+    # through untouched). A direct LAN hit is safe: external mode rejects every
+    # request without a valid Cloudflare Access JWT.
+    systemd.sockets.herdr-phone-lan = lib.mkIf (cfg.audience != "") {
+      description = "herdr-phone LAN bridge socket";
+      wantedBy = [ "sockets.target" ];
+      socketConfig.ListenStream = toString cfg.lanPort;
+    };
+
+    systemd.services.herdr-phone-lan = lib.mkIf (cfg.audience != "") {
+      description = "herdr-phone LAN bridge (LAN:${toString cfg.lanPort} -> 127.0.0.1:${toString cfg.port})";
+      requires = [ "herdr-phone.service" "herdr-phone-lan.socket" ];
+      after = [ "herdr-phone.service" "herdr-phone-lan.socket" ];
+      serviceConfig = {
+        ExecStart = "${config.systemd.package}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString cfg.port}";
+        Restart = "on-failure";
+        RestartSec = "5s";
+      };
+    };
+
+    # Open the bridge port on the LAN interface for the in-cluster proxy. tailscale.nix
+    # trusts only tailscale0; the origin's Access-JWT check is what makes LAN exposure safe.
+    networking.firewall.allowedTCPPorts = lib.mkIf (cfg.audience != "") [ cfg.lanPort ];
   };
 }
