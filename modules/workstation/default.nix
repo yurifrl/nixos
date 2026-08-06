@@ -10,6 +10,8 @@
     ./cloud-init.nix
     ./self-rebuild.nix
     ./ssh-agent.nix
+    ./herdr-packages.nix
     ./agents.nix
+    ./herdr-phone.nix
   ];
 }

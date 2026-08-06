@@ -1,41 +1,12 @@
 # pi + herdr — the point of the workstation box.
 #
-# herdr: a Rust binary, NOT on npm. Pinned prebuilt upstream Linux release,
-#        dynamically linked so autoPatchelfHook fixes its interpreter/libs.
+# herdr: pinned prebuilt upstream Linux release, defined once in the overlay
+#        (herdr-packages.nix) so herdr-phone.nix shares the same package.
 # pi:    npm package, updates very frequently -> installed imperatively via bun
 #        at boot so it self-updates (not pinned in nixpkgs).
 { pkgs, lib, ... }:
-let
-  herdr = pkgs.stdenv.mkDerivation {
-    pname = "herdr";
-    version = "0.7.5";
-
-    src = pkgs.fetchurl {
-      url = "https://github.com/herdrdev/herdr/releases/download/v0.7.5/herdr-linux-x86_64";
-      hash = "sha256-PcgyiAc+TC08Z5ow576XvMqRQcb9F9u7khkULpXFklM=";
-    };
-
-    dontUnpack = true;
-    nativeBuildInputs = [ pkgs.autoPatchelfHook ];
-    buildInputs = [ pkgs.stdenv.cc.cc.lib ];
-
-    installPhase = ''
-      runHook preInstall
-      install -Dm755 $src $out/bin/herdr
-      runHook postInstall
-    '';
-
-    meta = with lib; {
-      description = "herdr — terminal multiplexer for coding agents";
-      homepage = "https://github.com/herdrdev/herdr";
-      license = licenses.agpl3Plus;
-      mainProgram = "herdr";
-      platforms = [ "x86_64-linux" ];
-    };
-  };
-in
 {
-  environment.systemPackages = [ herdr ];
+  environment.systemPackages = [ pkgs.herdr ];
 
   # pi: self-updating global bun install at every boot.
   systemd.services.pi-install = {
