@@ -6,7 +6,7 @@
     ./packages.nix
     ./nix-ld.nix
     ./tailscale.nix
-    ./apps-proxy.nix
+    ./cloudflared.nix
     ./cloud-init.nix
     ./self-rebuild.nix
     ./ssh-agent.nix
