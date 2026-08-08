@@ -10,10 +10,11 @@
 #   herdr-phone   the remote-access relay + PWA, run in the fork's `external`
 #                 front-door mode: it serves its origin on 127.0.0.1:<port> and
 #                 re-validates the Cloudflare Access JWT, but starts NO
-#                 cloudflared of its own. The shared syscd.space cloudflared/proxy
-#                 that runs on this box forwards
-#                     herdr.syscd.space -> http://127.0.0.1:<port>
-#                 (per-app port map), passing the Access JWT through to the origin.
+#                 cloudflared of its own. The syscd.space cloudflared connector
+#                 that runs on this box (modules/workstation/cloudflared.nix)
+#                 dials the origin over loopback:
+#                     herdr.syscd.space -> http://localhost:<port>
+#                 passing the Access JWT through to the origin.
 #
 # The relay stays inactive until the Cloudflare Access AUD for herdr.syscd.space
 # is provided (services.herdrPhone.audience). That AUD is the one value shared
@@ -63,24 +64,13 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 8787;
-      description = "Loopback port the herdr-phone origin binds (the LAN bridge forwards here).";
-    };
-
-    lanPort = lib.mkOption {
-      type = lib.types.port;
-      default = 8788;
-      description = ''
-        LAN port the herdr-phone origin is bridged onto for the in-cluster
-        apps-space cloudflared proxy (which reaches this box over the LAN at
-        192.168.68.118:<lanPort>). Must match the herdr entry in the apps map in
-        home-systems-values/apps-space/values.yaml.
-      '';
+      description = "Loopback port the herdr-phone origin binds (the on-box cloudflared dials it).";
     };
 
     publicUrl = lib.mkOption {
       type = lib.types.str;
       default = "https://herdr.syscd.space";
-      description = "Public https URL the shared syscd.space proxy serves for herdr.";
+      description = "Public https URL the syscd.space cloudflared serves for herdr.";
     };
 
     teamDomain = lib.mkOption {
@@ -154,32 +144,5 @@ in
         RestartSec = "5s";
       };
     };
-
-    # LAN bridge. herdr-phone binds loopback only (a hard security invariant of
-    # the relay), but the in-cluster apps-space cloudflared reaches this box over
-    # the LAN. Expose the loopback origin on the LAN via a plain TCP proxy
-    # (systemd-socket-proxyd, which passes WebSockets and the Access JWT header
-    # through untouched). A direct LAN hit is safe: external mode rejects every
-    # request without a valid Cloudflare Access JWT.
-    systemd.sockets.herdr-phone-lan = lib.mkIf (cfg.audience != "") {
-      description = "herdr-phone LAN bridge socket";
-      wantedBy = [ "sockets.target" ];
-      socketConfig.ListenStream = toString cfg.lanPort;
-    };
-
-    systemd.services.herdr-phone-lan = lib.mkIf (cfg.audience != "") {
-      description = "herdr-phone LAN bridge (LAN:${toString cfg.lanPort} -> 127.0.0.1:${toString cfg.port})";
-      requires = [ "herdr-phone.service" "herdr-phone-lan.socket" ];
-      after = [ "herdr-phone.service" "herdr-phone-lan.socket" ];
-      serviceConfig = {
-        ExecStart = "${config.systemd.package}/lib/systemd/systemd-socket-proxyd 127.0.0.1:${toString cfg.port}";
-        Restart = "on-failure";
-        RestartSec = "5s";
-      };
-    };
-
-    # Open the bridge port on the LAN interface for the in-cluster proxy. tailscale.nix
-    # trusts only tailscale0; the origin's Access-JWT check is what makes LAN exposure safe.
-    networking.firewall.allowedTCPPorts = lib.mkIf (cfg.audience != "") [ cfg.lanPort ];
   };
 }

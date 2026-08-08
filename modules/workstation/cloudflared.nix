@@ -42,6 +42,10 @@ in
       inherit credentialsFile;
       ingress = {
         "board-games.syscd.space" = "http://localhost:8080";
+        # herdr remote access. herdr-phone (external mode) serves the origin on
+        # loopback and re-validates the Cloudflare Access JWT this connector
+        # passes through; see modules/workstation/herdr-phone.nix.
+        "herdr.syscd.space" = "http://localhost:8787";
       };
       default = "http_status:404";
     };
