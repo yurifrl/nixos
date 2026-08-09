@@ -1,11 +1,6 @@
 name: "🏗️ Build & Release"
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - '*.version'
   workflow_dispatch:
 
 permissions:
