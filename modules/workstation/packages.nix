@@ -34,8 +34,6 @@
     # Shell & terminal
     fish
     starship
-    zellij
-    tmux
     atuin
     zoxide
     mise
@@ -56,30 +54,15 @@
     sshpass
     eza
     television
-    fortune
-    cowsay
-    ledger
-    hledger
-    chess-tui
 
     # Git & version control
-    delta
-    git-filter-repo
     git-lfs
-    gitleaks
-    gitu
-    gitui
-    bfg-repo-cleaner
-    jujutsu
 
     # Dev/build tooling & languages
     # Dev/build (light; heavy toolchains — rust, llvm, cmake, ninja, tree-sitter,
     # protobuf, qmk — install per-project via mise, not baked into the image)
     yamlfmt
     gnupg
-    dfu-util
-    esptool
-    pipenv
     pnpm
     prettier
     prettierd
@@ -89,8 +72,6 @@
     # AI / LLM CLIs (ollama + aider dropped: multi-GB; run via mise/uv on demand)
     gemini-cli
     mods
-    opencode
-    crush
 
     # Kubernetes helpers (kubectl + helm are in base above; argocd/velero/istioctl/
     # talosctl/terraform/awscli/gcloud/etc install via mise)
@@ -99,24 +80,15 @@
     # Data / formats (kafka dropped: pulls a JDK)
     yq-go
     jsonnet
-    jnv
     pandoc
-    d2
-    marp-cli
 
     # Media & file tools
-    ffmpeg
-    yt-dlp
     chafa
-    exiftool
     vhs
     yazi
     s3cmd
 
     # Network
     dnsmasq
-    wakeonlan
-    oha
-    ookla-speedtest # unfree
   ];
 }
