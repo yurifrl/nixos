@@ -3,6 +3,8 @@
   imports = [
     ./docker.nix
     ./k3s.nix
+    ./nix.nix
+    ./cly.nix
     ./packages.nix
     ./nix-ld.nix
     ./tailscale.nix

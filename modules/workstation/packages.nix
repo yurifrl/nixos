@@ -14,6 +14,9 @@
     nodejs
     bun
 
+    # cly: personal dev CLI, from its own flake overlay (./cly.nix).
+    cly
+
     # Dev tools.
     git
     gh

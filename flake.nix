@@ -3,6 +3,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     deploy-rs.url = "github:serokell/deploy-rs";
+    cly.url = "github:yurifrl/cly";
+    cly.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # Define the system configuration
