@@ -4,7 +4,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     deploy-rs.url = "github:serokell/deploy-rs";
     cly.url = "github:yurifrl/cly";
-    cly.inputs.nixpkgs.follows = "nixpkgs";
+    # No nixpkgs.follows: cly builds from source and needs a recent Go toolchain
+    # (go.mod requires >= 1.25.8). Letting it use its own nixos-unstable pin means
+    # it always builds with the latest Go, instead of this host's pinned nixpkgs.
   };
 
   # Define the system configuration
