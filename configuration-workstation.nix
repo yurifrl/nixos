@@ -19,10 +19,11 @@
   # front-door mode). The relay serves 127.0.0.1:8787 and validates the
   # Cloudflare Access JWT; the on-box syscd-apps cloudflared forwards
   # herdr.syscd.space -> http://127.0.0.1:8787. The audience is the AUD of the
-  # *.syscd.space wildcard Cloudflare Access app that gates the whole syscd.space
-  # edge (cloudflare-access chart), which now covers herdr.syscd.space.
+  # dedicated herdr.syscd.space Cloudflare Access app (cloudflare-access chart,
+  # application `herdr`), which overrides the *.syscd.space wildcard for this
+  # host and gives herdr-phone a stable AUD of its own.
   services.herdrPhone.enable = true;
-  services.herdrPhone.audience = "6ba298c410aa7715d4c03eadf3ee74145affed91eab6b418aeb17945075ec3de";
+  services.herdrPhone.audience = "6e763fdf5f78fa75926de0507d736edd0f27ebe560aac24b66b6ce198843e8ef";
 
   # Like a DigitalOcean droplet: allow username + password SSH login, in addition
   # to key-based and Tailscale SSH. The box is only reachable over the LAN and the
