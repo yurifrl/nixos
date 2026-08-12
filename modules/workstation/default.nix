@@ -8,6 +8,7 @@
     ./packages.nix
     ./nix-ld.nix
     ./tailscale.nix
+    ./tailscale-company.nix
     ./cloudflared.nix
     ./cloud-init.nix
     ./self-rebuild.nix
