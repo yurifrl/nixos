@@ -12,6 +12,7 @@
     ./cloudflared.nix
     ./cloud-init.nix
     ./self-rebuild.nix
+    ./github-ssh.nix
     ./ssh-agent.nix
     ./herdr-packages.nix
     ./agents.nix
