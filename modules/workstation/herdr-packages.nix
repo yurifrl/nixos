@@ -13,11 +13,11 @@
     (final: prev: {
       herdr = prev.stdenv.mkDerivation {
         pname = "herdr";
-        version = "0.7.5";
+        version = "0.8.0";
 
         src = prev.fetchurl {
-          url = "https://github.com/herdrdev/herdr/releases/download/v0.7.5/herdr-linux-x86_64";
-          hash = "sha256-PcgyiAc+TC08Z5ow576XvMqRQcb9F9u7khkULpXFklM=";
+          url = "https://github.com/herdrdev/herdr/releases/download/v0.8.0/herdr-linux-x86_64";
+          hash = "sha256-uHLqfkD6LLF+hXrJtisb8m23tAPGIvXS8/WzX26azSg=";
         };
 
         dontUnpack = true;
@@ -55,8 +55,8 @@
           src = prev.fetchFromGitHub {
             owner = "yurifrl";
             repo = "herdr-phone";
-            rev = "382f91813ffb0b1f5e9119b53ec2cb5004194fdb";
-            sha256 = "14cyv008h79s1333cnmsqy0mpismixj97pwfnp0s5rgdzzixppg4";
+            rev = "a66207427fd31f3574e102784c3d0ae766571a49";
+            sha256 = "1ijwzrnmd8bik4rbas3qb8shmiv76hw0n8nyj9499aybxa2ljq94";
           };
 
           # The PWA (web/) built to web/dist by `npm run build` (vite).
