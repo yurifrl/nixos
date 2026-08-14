@@ -60,6 +60,7 @@
 
     # Git & version control
     git-lfs
+    delta
 
     # Dev/build tooling & languages
     # Dev/build (light; heavy toolchains — rust, llvm, cmake, ninja, tree-sitter,
