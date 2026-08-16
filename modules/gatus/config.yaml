@@ -166,28 +166,23 @@ endpoints:
       - type: discord
         failure-threshold: 12
 
-  # Sole control-plane apiserver liveness (over the tailnet, from the DO gatus
-  # host). Catches kube-apiserver DOWN on the sole CP while the node itself is
-  # still pingable - the exact gap in the 2026-07-13 CRD-cache OOM outage, where
-  # 'Tailnet dell01' stayed green (node up) and the 'ArgoCD' check stayed 200
-  # (argocd-server runs on macarm01). Independent of the in-cluster VM metrics
-  # stack (which was dark). apiserver runs --anonymous-auth=false, so an
-  # unauthenticated /readyz returns 401 = process up and serving; a
-  # connection-refused/timeout (OOM/crashloop) fails the check. Repoint the IP
-  # when the CP migrates to macintel01 (home-systems-0r5.3).
-  # See .agents/postmortems/2026-07-13-apiserver-crd-cache-oom.
-  - name: kube-apiserver dell01
+  # Active control-plane apiserver liveness (over the tailnet, from the DO gatus
+  # host). The API moved from dell01 to macintel01; this must follow the role,
+  # not the former node. A 401 confirms anonymous-auth is disabled and the API
+  # is serving; the latency condition detects the live-but-saturated failure
+  # documented in .agents/postmortems/2026-08-16-crossplane-finalizer-retry-storm.
+  - name: kube-apiserver macintel01
     group: Tech
-    url: https://100.82.148.37:6443/readyz
+    url: https://100.65.212.5:6443/readyz
     interval: 10s
     client:
-      insecure: true # apiserver serves its own CA-signed cert; we only test liveness
+      insecure: true
     conditions:
-      - "[STATUS] == 401" # 401 = apiserver up (anonymous-auth=false); refused/timeout = down
+      - "[STATUS] == 401"
       - "[RESPONSE_TIME] < 2000"
     alerts:
       - type: discord
-        failure-threshold: 12 # ~2min: ride out a normal apiserver restart, page on sustained down
+        failure-threshold: 12
 
   # Httpbin
   - name: Httpbin Cloudflare NO Token
