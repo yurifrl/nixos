@@ -15,6 +15,7 @@
     ./github-ssh.nix
     ./ssh-agent.nix
     ./herdr-packages.nix
+    ./omp.nix
     ./agents.nix
     ./herdr-phone.nix
   ];

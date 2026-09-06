@@ -17,6 +17,9 @@
     # cly: personal dev CLI, from its own flake overlay (./cly.nix).
     cly
 
+    # omp: coding agent (pinned prebuilt release, overlay in ./omp.nix).
+    omp
+
     # Dev tools.
     git
     gh
@@ -85,6 +88,9 @@
     yq-go
     jsonnet
     pandoc
+
+    # Railway deploy CLI.
+    railway
 
     # Media & file tools
     chafa
