@@ -5,6 +5,7 @@
     ./k3s.nix
     ./nix.nix
     ./cly.nix
+    ./beads.nix
     ./packages.nix
     ./nix-ld.nix
     ./tailscale.nix

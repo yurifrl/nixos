@@ -46,6 +46,10 @@ in
         # loopback and re-validates the Cloudflare Access JWT this connector
         # passes through; see modules/workstation/herdr-phone.nix.
         "herdr.syscd.space" = "http://localhost:8787";
+        # Tilt UI (kubernetes dev dashboard).
+        "tilt.syscd.space" = "http://localhost:10350";
+        # incidents-admin dev server (bun run dev; see ~/Workdir/Nsx/incidents-admin).
+        "incidents-admin.syscd.space" = "http://localhost:3004";
       };
       default = "http_status:404";
     };
