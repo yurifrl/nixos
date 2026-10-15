@@ -121,30 +121,9 @@ endpoints:
     alerts:
       - type: discord
 
-  # Proxmox host pc01 API liveness. The host is NOT a k8s node and has no
-  # node_exporter; 401 on an unauthenticated /api2/json/* call is the
-  # cheapest possible "pveproxy is answering" signal (the UI root / is
-  # 200 for everyone, so the check must hit an API path). ICMP stays green
-  # through a TCP-accepts-but-unresponsive wedge (see
-  # .agents/postmortems/2026-10-14-pc01-qemu-memory-overcommit-wedge/PM.md),
-  # so this must be an HTTPS check, not icmp.
-  # BLOCKED (tk substrate task, see epic pm:2026-10-14-pc01-qemu-memory-overcommit-wedge):
-  # no tailnet route to 192.168.68.0/24 exists yet — deploying uncommented
-  # would permanently-fail this check. Uncomment AFTER the substrate task
-  # (subnet router advertising 192.168.68.0/24, or host joins the tailnet
-  # and the URL below becomes the host tailnet IP).
-  # - name: Proxmox pc01 API
-  #   group: Tech
-  #   url: https://192.168.68.112:8006/api2/json/version
-  #   interval: 10s
-  #   client:
-  #     insecure: true
-  #   conditions:
-  #     - "[STATUS] == 401"
-  #     - "[RESPONSE_TIME] < 2000"
-  #   alerts:
-  #     - type: discord
-  #       failure-threshold: 12
+  # No API probe for the Proxmox host pc01: the DO gatus host has no
+  # tailnet route to 192.168.68.0/24 and the substrate was deliberately
+  # rejected 2026-10-15 (tk-ait, pm:2026-10-14-pc01-qemu-memory-overcommit-wedge).
 
   # Tailnet node reachability (gatus runs on digitalocean-gatus-01, itself on the
   # tailnet). Catches a node silently leaving the tailnet while still k8s-Ready.
