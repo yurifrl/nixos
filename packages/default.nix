@@ -13,4 +13,7 @@
   
   # Gatus - Developer-oriented status page
   gatus = pkgs.callPackage ./gatus {};
+
+  # Tern - stencil.so app (vendored tarball; upstream URL is presigned/expiring)
+  tern = pkgs.callPackage ./tern {};
 } 
