@@ -15,6 +15,7 @@
   # System packages
   environment.systemPackages = [
     inputs.self.packages.${pkgs.system}.cowsay-version
+    inputs.self.packages.${pkgs.system}.tern
     # Needed for ansible
     pkgs.python3
   ];
