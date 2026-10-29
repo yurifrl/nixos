@@ -15,6 +15,9 @@
     shell = pkgs.fish;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAvaTuBhwuQHdjIP1k9YQk9YMqmGiOate19iXe6T4IL/" # Local (same key as root)
+      # Tern.app on the Mac: the 1Password agent won't sign for it, so the app
+      # needs a plain on-disk key (~/.ssh/tern-workstation, private never committed).
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIL97djgWlzivtW9bpB39qJsyb6Jq1n9EDjzYo7QsLcy tern-app"
     ];
   };
 
