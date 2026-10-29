@@ -26,10 +26,6 @@ jobs:
             build-target: proxmoxImage
             create-do-image: "false"
             versioned: "true"
-          - image: workstation-gpu
-            build-target: proxmoxImage
-            create-do-image: "false"
-            versioned: "true"
     steps:
       - uses: actions/checkout@v6
         with:
