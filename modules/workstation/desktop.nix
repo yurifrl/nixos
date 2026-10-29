@@ -38,6 +38,17 @@
 
   programs.hyprland.enable = true;
 
+  # Game streaming: Sunshine hosts this VM's display to Moonlight clients
+  # (Parsec cannot host on Linux). KMS capture (CAP_SYS_ADMIN) grabs the
+  # passed-through NVIDIA output even outside a session; the module opens
+  # its firewall ports, enables uinput (virtual controllers) and avahi
+  # (mDNS discovery on the LAN).
+  services.sunshine = {
+    enable = true;
+    capSysAdmin = true;
+    openFirewall = true;
+  };
+
   # Minimal TUI login on the passed-through display (no display manager).
   services.greetd = {
     enable = true;
@@ -53,10 +64,11 @@
   programs.gamemode.enable = true;
 
   environment.systemPackages = with pkgs; [
-    kitty        # Hyprland default terminal binding
-    wofi         # Hyprland default launcher binding
-    vulkan-tools # vulkaninfo: proves the GPU shows up in the guest
-    mesa-demos   # glxinfo: proves GL renders on the passthrough GPU
+    kitty         # Hyprland default terminal binding
+    wofi          # Hyprland default launcher binding
+    moonlight-qt  # client for other streaming hosts (e.g. the Windows VM)
+    vulkan-tools  # vulkaninfo: proves the GPU shows up in the guest
+    mesa-demos    # glxinfo: proves GL renders on the passthrough GPU
   ];
 
   fonts.packages = with pkgs; [
