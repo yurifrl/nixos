@@ -57,6 +57,20 @@
           ./configuration-workstation.nix
         ];
       };
+
+      # Workstation-gpu gaming VM (Proxmox VM 103, NVIDIA passthrough). Same
+      # shape as `workstation`; desktop.nix adds Hyprland + Steam + NVIDIA.
+      # qcow2 build target:
+      #   nix build .#nixosConfigurations.workstation-gpu.config.system.build.proxmoxImage
+      workstation-gpu = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {
+          inherit inputs nixpkgs;
+        };
+        modules = [
+          ./configuration-workstation-gpu.nix
+        ];
+      };
     };
 
     deploy = {

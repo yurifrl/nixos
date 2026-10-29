@@ -2,7 +2,7 @@
 # `ws-rebuild` clones/pulls this repo using the GitHub deploy key that
 # workstation-bootstrap.sh op-reads to /root/.ssh/id_workstation_deploy, then
 # runs `nixos-rebuild switch --flake .#workstation`.
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   repoUrl = "git@github.com:Yurifrl/nixos.git";
   repoDir = "/root/nixos";
@@ -19,7 +19,7 @@ let
       else
         git clone "${repoUrl}" "${repoDir}"
       fi
-      nixos-rebuild switch --flake "${repoDir}#workstation"
+      nixos-rebuild switch --flake "${repoDir}#${config.networking.hostName}"
     '';
   };
 in
