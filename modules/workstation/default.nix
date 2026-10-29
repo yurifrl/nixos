@@ -18,6 +18,7 @@
     ./herdr-packages.nix
     ./omp.nix
     ./agents.nix
+    ./desktop.nix
     ./herdr-phone.nix
   ];
 }
