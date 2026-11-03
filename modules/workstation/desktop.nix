@@ -9,12 +9,12 @@
 # streamed by Sunshine instead of shown on a physical monitor.
 { config, pkgs, lib, ... }:
 let
-  # Headless session: greetd auto-logs in (initial_session) through this
-  # wrapper — it starts the Sunshine host alongside the session (KMS capture
-  # needs no WAYLAND_DISPLAY; audio comes from the user's pipewire) and execs
-  # Hyprland on the DRM output.
+  # Headless session: greetd auto-logs in (initial_session) straight into
+  # Hyprland on the DRM output. Hyprland MUST grab DRM master first —
+  # Sunshine started before it would steal master and kill the compositor.
+  # The compositor's config starts Sunshine via exec-once once the session
+  # is up (activation script below creates the config create-if-absent).
   sunshineHeadlessSession = pkgs.writeShellScriptBin "sunshine-headless-session" ''
-    systemctl --user start sunshine.service &
     exec ${config.programs.hyprland.package}/bin/Hyprland
   '';
 in
@@ -53,12 +53,23 @@ in
   programs.dconf.enable = true;
 
   xdg.portal = {
-    enable = true;
     extraPortals = [
       pkgs.xdg-desktop-portal-hyprland
       pkgs.xdg-desktop-portal-gtk
     ];
   };
+
+  # Deliver the compositor config create-if-absent (user edits survive
+  # rebuilds). exec-once starts Sunshine only after the session exists, so
+  # Hyprland keeps DRM master and Sunshine captures the live session.
+  system.activationScripts.sunshineHyprlandConf = lib.stringAfter [ "users" ] ''
+    conf="/home/yuri-workstation/.config/hypr/hyprland.conf"
+    if [ ! -f "$conf" ]; then
+      mkdir -p "$(dirname "$conf")"
+      printf 'exec-once = systemctl --user start sunshine.service\n' > "$conf"
+      chown yuri-workstation:users "$conf"
+    fi
+  '';
 
   services.greetd = {
     enable = true;
