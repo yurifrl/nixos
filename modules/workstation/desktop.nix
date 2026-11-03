@@ -36,7 +36,13 @@
     NIXOS_OZONE_WL = "1";
   };
 
-  programs.hyprland.enable = true;
+  programs.hyprland = {
+    enable = true;
+    # UWSM manages the session as proper systemd user units, activating
+    # graphical-session.target on start — which Sunshine's user service
+    # binds to. Plain Hyprland does not activate that target.
+    withUWSM = true;
+  };
 
   # Game streaming: Sunshine hosts this VM's display to Moonlight clients
   # (Parsec cannot host on Linux). KMS capture (CAP_SYS_ADMIN) grabs the
@@ -58,7 +64,7 @@
     enable = true;
     settings = {
       initial_session = {
-        command = "${config.programs.hyprland.package}/bin/Hyprland";
+        command = "${pkgs.uwsm}/bin/uwsm start -N Hyprland";
         user = "yuri-workstation";
       };
       default_session.command =
