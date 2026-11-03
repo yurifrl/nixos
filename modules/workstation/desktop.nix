@@ -49,11 +49,21 @@
     openFirewall = true;
   };
 
-  # Minimal TUI login on the passed-through display (no display manager).
+  # Headless streaming box: NOBODY logs in — there is no monitor. greetd
+  # auto-logs into Hyprland at boot so the session (and Sunshine, bound to
+  # graphical-session.target) is always up; Moonlight clients connect over
+  # the network. tuigreet stays as the fallback greeter if autologin is
+  # ever removed.
   services.greetd = {
     enable = true;
-    settings.default_session.command =
-      "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+    settings = {
+      initial_session = {
+        command = "${config.programs.hyprland.package}/bin/Hyprland";
+        user = "yuri-workstation";
+      };
+      default_session.command =
+        "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+    };
   };
 
   programs.steam = {
