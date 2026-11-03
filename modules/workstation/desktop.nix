@@ -45,6 +45,21 @@ in
     LIBVA_DRIVER_NAME = "nvidia";
     NIXOS_OZONE_WL = "1";
   };
+  # Wayland session. greetd (below) launches Hyprland via the headless
+  # Sunshine wrapper. Portals + dconf so GTK/Qt apps behave under Wayland
+  # (screen sharing, file dialogs, dark-mode settings).
+  programs.hyprland.enable = true;
+
+  programs.dconf.enable = true;
+
+  xdg.portal = {
+    enable = true;
+    extraPortals = [
+      pkgs.xdg-desktop-portal-hyprland
+      pkgs.xdg-desktop-portal-gtk
+    ];
+  };
+
   services.greetd = {
     enable = true;
     settings = {
@@ -53,7 +68,34 @@ in
         user = "yuri-workstation";
       };
       default_session.command =
-        "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+        "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+    };
+  };
+
+  # Sunshine needs cap_sys_admin for KMS capture on the DRM output, so the
+  # binary is exposed as a root-owned capability wrapper instead of running
+  # it directly from the store.
+  security.wrappers.sunshine = {
+    source = "${pkgs.sunshine}/bin/sunshine";
+    owner = "root";
+    group = "root";
+    capabilities = "cap_setpcap,cap_sys_admin=p";
+    permissions = "u=rx,g=x,o=x";
+  };
+
+  # Stream host as a user service — the greetd wrapper starts it with
+  # `systemctl --user start sunshine.service`; it binds graphical-session
+  # lifecycle for any other management entry points.
+  systemd.user.services.sunshine = {
+    description = "Self-hosted game stream host for Moonlight";
+    wantedBy = [ "graphical-session.target" ];
+    wants = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "/run/wrappers/bin/sunshine";
+      Restart = "on-failure";
+      RestartSec = "5s";
     };
   };
 
@@ -68,6 +110,7 @@ in
     kitty         # Hyprland default terminal binding
     wofi          # Hyprland default launcher binding
     moonlight-qt  # client for other streaming hosts (e.g. the Windows VM)
+    sunshine      # stream host (started via the capability wrapper, see above)
     vulkan-tools  # vulkaninfo: proves the GPU shows up in the guest
     mesa-demos    # glxinfo: proves GL renders on the passthrough GPU
   ];
