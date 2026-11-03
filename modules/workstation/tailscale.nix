@@ -14,7 +14,12 @@
       "--advertise-tags=tag:workstation"
       "--ssh"
       "--accept-dns"
-      "--accept-routes"
+      # accept-routes=false: this VM LIVES on the home LAN (ens18, 192.168.68.
+      # 0/24). Accepting a tailnet subnet route for that same range shadows the
+      # connected route via tailscale0, so replies to LAN peers (Moonlight,
+      # browsers on the Mac) get swallowed by the tailnet and never arrive.
+      # Direct tailnet peers are unaffected — only advertised subnets are.
+      "--accept-routes=false"
     ];
   };
 
