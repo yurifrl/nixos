@@ -110,6 +110,23 @@ in
     };
   };
 
+  # Moonlight reaches the stream host from other machines: Sunshine's
+  # control ports (HTTPS pairing 47984, HTTP 47989, web UI 47990) and the
+  # RTP/RTSP media streams (TCP + UDP 48010, UDP 47998-48000).
+  networking.firewall = {
+    allowedTCPPorts = [
+      47984
+      47989
+      47990
+      48010
+    ];
+    allowedUDPPorts = [
+      47998
+      47999
+      48000
+      48010
+    ];
+  };
   programs.steam = {
     enable = true;
     # Steam Remote Play / streaming over the LAN without manual firewall holes.
