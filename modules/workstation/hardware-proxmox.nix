@@ -30,6 +30,15 @@
     autoResize = true;
   };
 
+  # Second QEMU disk (blank 100G), formatted ext4 label "games", for game
+  # installs (e.g. Lutris/WoW). nofail so a fresh qcow2 image without the
+  # second disk still boots.
+  fileSystems."/mnt/games" = {
+    device = "/dev/disk/by-label/games";
+    fsType = "ext4";
+    options = [ "nofail" ];
+  };
+
   # Keep nixpkgs on the box for self-rebuild (`nixos-rebuild switch --flake`).
   environment.etc.nixpkgs.source = inputs.nixpkgs;
 
