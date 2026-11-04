@@ -171,6 +171,8 @@ in
     sunshinePkg   # stream host (started via the capability wrapper, see above)
     vulkan-tools  # vulkaninfo: proves the GPU shows up in the guest
     mesa-demos    # glxinfo: proves GL renders on the passthrough GPU
+    lutris        # WoW without Steam: Battle.net under managed Wine runners
+    wineWowPackages.stable  # Wine 10 WoW64 — 32-bit Windows apps, no multilib
   ];
 
   fonts.packages = with pkgs; [
