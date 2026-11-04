@@ -83,6 +83,9 @@ in
       chown yuri-workstation:users "$conf2"
     fi
     grep -q '^system_tray' "$conf2" || printf 'system_tray = disabled\n' >> "$conf2"
+    # v2026.914 tries the RemoteDesktop portal first and fails on it (GDBus
+    # error); wlgrab works headless — pin it explicitly so startup completes.
+    grep -q '^capture' "$conf2" || printf 'capture = wlr\n' >> "$conf2"
     chown yuri-workstation:users "$conf2"
   '';
 
