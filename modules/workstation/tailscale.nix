@@ -28,11 +28,14 @@
   # BEFORE the main table — so replies to LAN peers (Moonlight, the Mac's
   # browser) get diverted into the tailnet and never arrive, while
   # tailnet-originated traffic (SSH via 100.x) still works. Pin ONLY the
-  # home-LAN prefix back to the main table, ahead of rule 5270: the ens18
-  # connected route serves LAN peers again, and every other accepted subnet
-  # (10.x company ranges) keeps routing via the tailnet.
-  networking.localCommands = ''
-    ip rule add priority 5265 to 192.168.68.0/24 lookup main 2>/dev/null || true
+  # home-LAN prefix back to the main table via an activation script
+  # (networking.localCommands never runs on networkd systems). Priority 5150
+  # sits ahead of tailscale's rules (5210-5270) and outside its managed band,
+  # so tailscaled restarts leave it alone: the ens18 connected route serves
+  # LAN peers again, and every other accepted subnet (10.x company ranges)
+  # keeps routing via the tailnet.
+  system.activationScripts.tailnetLanRoutePin = ''
+    ip rule add priority 5150 to 192.168.68.0/24 lookup main 2>/dev/null || true
   '';
 
   # Trust the tailnet interface so every dev-server port is reachable from
