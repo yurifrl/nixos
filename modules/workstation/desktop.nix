@@ -114,6 +114,10 @@ in
       Restart = "on-failure";
       RestartSec = "5s";
     };
+    # v2026.914 prep-cmds shell out to setsid (util-linux) and session tools;
+    # the user-manager's minimal PATH lacks them, which aborted startup before
+    # the ports ever bound.
+    environment.PATH = "/run/wrappers/bin:/run/current-system/sw/bin";
   };
 
   # Moonlight reaches the stream host from other machines: Sunshine's
