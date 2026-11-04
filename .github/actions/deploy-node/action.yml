@@ -60,7 +60,7 @@ runs:
         ssh -o StrictHostKeyChecking=no root@$hostname 'cowsay-version test'
 
     - name: Cache Nix store
-      uses: nix-community/cache-nix-action@v6
+      uses: nix-community/cache-nix-action@v7
       with:
         primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock') }}
         paths: |
