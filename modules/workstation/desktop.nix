@@ -64,10 +64,11 @@ in
       pkgs.xdg-desktop-portal-gtk
     ];
   };
-
-  # Deliver the compositor config create-if-absent (user edits survive
-  # rebuilds). exec-once starts Sunshine only after the session exists, so
-  # Hyprland keeps DRM master and Sunshine captures the live session.
+  # Deliver configs create-if-absent (user edits survive rebuilds):
+  # - hyprland.conf: exec-once starts Sunshine only after the session exists,
+  #   so Hyprland keeps DRM master and Sunshine captures the live session.
+  # - sunshine.conf: v2026.914 aborts startup when the system tray cannot be
+  #   created — headless boxes have no tray.
   system.activationScripts.sunshineHyprlandConf = lib.stringAfter [ "users" ] ''
     conf="/home/yuri-workstation/.config/hypr/hyprland.conf"
     if [ ! -f "$conf" ]; then
@@ -75,6 +76,14 @@ in
       printf 'exec-once = systemctl --user start sunshine.service\n' > "$conf"
       chown yuri-workstation:users "$conf"
     fi
+    conf2="/home/yuri-workstation/.config/sunshine/sunshine.conf"
+    if [ ! -f "$conf2" ]; then
+      mkdir -p "$(dirname "$conf2")"
+      printf 'system_tray = disabled\n' > "$conf2"
+      chown yuri-workstation:users "$conf2"
+    fi
+    grep -q '^system_tray' "$conf2" || printf 'system_tray = disabled\n' >> "$conf2"
+    chown yuri-workstation:users "$conf2"
   '';
 
   services.greetd = {
