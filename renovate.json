@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "nix": {
     "enabled": true
@@ -9,6 +9,7 @@
   "ignorePaths": [
     ".old/**"
   ],
+  "automerge": true,
   "packageRules": [
     {
       "matchDatasources": ["github-releases"],
@@ -17,9 +18,10 @@
       "labels": ["dependency", "gatus"]
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^packages/gatus/default\\.nix$"],
+      "customType": "regex",
+      "managerFilePatterns": ["/^packages/gatus/default\\.nix$/"],
       "matchStrings": [
         "version = \"(?<currentValue>[0-9.]+)\";"
       ],
