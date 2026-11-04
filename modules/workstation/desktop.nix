@@ -76,11 +76,22 @@ in
   #   so Hyprland keeps DRM master and Sunshine captures the live session.
   # - sunshine.conf: v2026.914 aborts startup when the system tray cannot be
   #   created — headless boxes have no tray.
+  # - workstation binds: the stock Super+R launcher bind is useless from a
+  #   Mac (macOS eats Cmd/Super combos before Moonlight sees them), so the
+  #   launcher and terminal also live on Ctrl+Alt combos. Hyprland live-
+  #   reloads its config, so appended binds activate immediately.
   system.activationScripts.sunshineHyprlandConf = lib.stringAfter [ "users" ] ''
     conf="/home/yuri-workstation/.config/hypr/hyprland.conf"
     if [ ! -f "$conf" ]; then
       mkdir -p "$(dirname "$conf")"
       printf 'exec-once = systemctl --user start sunshine.service\n' > "$conf"
+      chown yuri-workstation:users "$conf"
+    fi
+    if ! grep -q 'workstation-binds' "$conf"; then
+      printf '\n# workstation-binds (mac-safe; macOS eats Cmd/Super combos)\n' >> "$conf"
+      printf 'bind = CTRL ALT, Space, exec, wofi --show drun\n' >> "$conf"
+      printf 'bind = CTRL ALT, Return, exec, kitty\n' >> "$conf"
+      printf 'bind = CTRL ALT, W, exec, wofi --show window\n' >> "$conf"
       chown yuri-workstation:users "$conf"
     fi
     conf2="/home/yuri-workstation/.config/sunshine/sunshine.conf"
