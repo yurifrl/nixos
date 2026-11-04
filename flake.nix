@@ -2,6 +2,10 @@
   # Declare the inputs/dependencies
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Sunshine v2026.914.233613 (GHSA-fp6g-27w5-489j high-severity Linux fix):
+    # the host's pinned nixpkgs still ships 2025.924, so the stream host is
+    # built from this dedicated pin (sunshine bumped @ 67d12d232 + darwin fix).
+    nixpkgs-sunshine.url = "github:NixOS/nixpkgs/62c00be3d23f0ca776e380cfa0ab0cb5792b0704";
     deploy-rs.url = "github:serokell/deploy-rs";
     cly.url = "github:yurifrl/cly";
     # No nixpkgs.follows: cly builds from source and needs a recent Go toolchain

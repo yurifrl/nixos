@@ -7,8 +7,13 @@
 # mode on). The same image also boots the GPU-less headless config: the
 # NVIDIA driver is inert there (no hardware to bind) and the session is
 # streamed by Sunshine instead of shown on a physical monitor.
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 let
+  # Sunshine from the dedicated nixpkgs-sunshine pin (v2026.914.233613,
+  # GHSA-fp6g-27w5-489j high-severity Linux fix — the host's pinned nixpkgs
+  # still ships 2025.924).
+  sunshinePkg = inputs.nixpkgs-sunshine.legacyPackages.x86_64-linux.sunshine;
+
   # Headless session: greetd auto-logs in (initial_session) straight into
   # Hyprland on the DRM output. Hyprland MUST grab DRM master first —
   # Sunshine started before it would steal master and kill the compositor.
@@ -45,6 +50,7 @@ in
     LIBVA_DRIVER_NAME = "nvidia";
     NIXOS_OZONE_WL = "1";
   };
+
   # Wayland session. greetd (below) launches Hyprland via the headless
   # Sunshine wrapper. Portals + dconf so GTK/Qt apps behave under Wayland
   # (screen sharing, file dialogs, dark-mode settings).
@@ -79,7 +85,7 @@ in
         user = "yuri-workstation";
       };
       default_session.command =
-        "${pkgs.tuigreet}/bin/tuigreet --time --cmd Hyprland";
+        "${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd Hyprland";
     };
   };
 
@@ -87,14 +93,14 @@ in
   # binary is exposed as a root-owned capability wrapper instead of running
   # it directly from the store.
   security.wrappers.sunshine = {
-    source = "${pkgs.sunshine}/bin/sunshine";
+    source = "${sunshinePkg}/bin/sunshine";
     owner = "root";
     group = "root";
     capabilities = "cap_setpcap,cap_sys_admin=p";
     permissions = "u=rx,g=x,o=x";
   };
 
-  # Stream host as a user service — the greetd wrapper starts it with
+  # Stream host as a user service — the Hyprland exec-once starts it with
   # `systemctl --user start sunshine.service`; it binds graphical-session
   # lifecycle for any other management entry points.
   systemd.user.services.sunshine = {
@@ -127,6 +133,7 @@ in
       48010
     ];
   };
+
   programs.steam = {
     enable = true;
     # Steam Remote Play / streaming over the LAN without manual firewall holes.
@@ -138,7 +145,7 @@ in
     kitty         # Hyprland default terminal binding
     wofi          # Hyprland default launcher binding
     moonlight-qt  # client for other streaming hosts (e.g. the Windows VM)
-    sunshine      # stream host (started via the capability wrapper, see above)
+    sunshinePkg   # stream host (started via the capability wrapper, see above)
     vulkan-tools  # vulkaninfo: proves the GPU shows up in the guest
     mesa-demos    # glxinfo: proves GL renders on the passthrough GPU
   ];

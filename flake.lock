@@ -89,6 +89,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-sunshine": {
+      "locked": {
+        "lastModified": 1790836526,
+        "narHash": "sha256-KJubtxhVzIXWR2jZA+b+UXR4h6gEIjs3c/Z/A/85hIc=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "62c00be3d23f0ca776e380cfa0ab0cb5792b0704",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "62c00be3d23f0ca776e380cfa0ab0cb5792b0704",
+        "type": "github"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1743014863,
@@ -125,7 +141,8 @@
       "inputs": {
         "cly": "cly",
         "deploy-rs": "deploy-rs",
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_3",
+        "nixpkgs-sunshine": "nixpkgs-sunshine"
       }
     },
     "systems": {
