@@ -58,6 +58,13 @@ in
 
   programs.dconf.enable = true;
 
+  # AppImages (WowUp) execute directly via binfmt — no FUSE dance, they run
+  # from the file manager or terminal like normal binaries.
+  programs.appimage = {
+    enable = true;
+    binfmt = true;
+  };
+
   xdg.portal = {
     extraPortals = [
       pkgs.xdg-desktop-portal-hyprland
