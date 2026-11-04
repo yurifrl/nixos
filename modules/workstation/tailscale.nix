@@ -3,7 +3,7 @@
 # tailscaled runs and authenticates from the authkey that workstation-bootstrap.sh
 # op-reads to /etc/tailscale/authkey. The authkey is minted tag:workstation, and
 # we also advertise the tag explicitly.
-{ ... }:
+{ pkgs, ... }:
 {
   services.tailscale = {
     enable = true;
@@ -35,7 +35,7 @@
   # LAN peers again, and every other accepted subnet (10.x company ranges)
   # keeps routing via the tailnet.
   system.activationScripts.tailnetLanRoutePin = ''
-    ip rule add priority 5150 to 192.168.68.0/24 lookup main 2>/dev/null || true
+    ${pkgs.iproute2}/bin/ip rule add priority 5150 to 192.168.68.0/24 lookup main 2>/dev/null || true
   '';
 
   # Trust the tailnet interface so every dev-server port is reachable from
