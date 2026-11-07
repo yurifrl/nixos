@@ -14,6 +14,10 @@ let
   # still ships 2025.924).
   sunshinePkg = inputs.nixpkgs-sunshine.legacyPackages.x86_64-linux.sunshine;
 
+  # Lutris 0.5.22 from the dedicated pin (host nixpkgs ships 0.5.19).
+  lutrisPkg = inputs.nixpkgs-lutris.legacyPackages.x86_64-linux.lutris.override {
+    steamSupport = false; # Steam runs separately; avoids pulling unfree steam-unwrapped
+  };
   # Headless session: greetd auto-logs in (initial_session) straight into
   # Hyprland on the DRM output. Hyprland MUST grab DRM master first —
   # Sunshine started before it would steal master and kill the compositor.
@@ -182,7 +186,7 @@ in
     sunshinePkg   # stream host (started via the capability wrapper, see above)
     vulkan-tools  # vulkaninfo: proves the GPU shows up in the guest
     mesa-demos    # glxinfo: proves GL renders on the passthrough GPU
-    lutris        # WoW without Steam: Battle.net under managed Wine runners
+lutrisPkg       # WoW without Steam: Battle.net under managed Wine runners
     wineWowPackages.stable  # Wine 10 WoW64 — 32-bit Windows apps, no multilib
   ];
 
