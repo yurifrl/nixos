@@ -98,6 +98,13 @@ in
       printf 'bind = CTRL ALT, W, exec, wofi --show window\n' >> "$conf"
       chown yuri-workstation:users "$conf"
     fi
+    # The EDID-detected mode is 4096x2160@24 (odd aspect, 4x the pixels a
+    # software encoder can push smoothly). Moonlight streams 16:9 — pin the
+    # output to 1080p60. Hyprland live-reloads this instantly.
+    if ! grep -q '^monitor = HDMI-A-1' "$conf"; then
+      printf 'monitor = HDMI-A-1, 1920x1080@60, 0x0, 1\n' >> "$conf"
+      chown yuri-workstation:users "$conf"
+    fi
     conf2="/home/yuri-workstation/.config/sunshine/sunshine.conf"
     if [ ! -f "$conf2" ]; then
       mkdir -p "$(dirname "$conf2")"
