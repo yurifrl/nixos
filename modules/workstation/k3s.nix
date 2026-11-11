@@ -12,7 +12,7 @@
 { ... }:
 {
   services.k3s = {
-    enable = true;
+    enable = false;
     role = "server";
     extraFlags = "--write-kubeconfig-mode=0644 --flannel-iface=ens18 --disable-network-policy";
   };
