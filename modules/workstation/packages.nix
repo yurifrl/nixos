@@ -77,6 +77,7 @@
     just
 
     # AI / LLM CLIs (ollama + aider dropped: multi-GB; run via mise/uv on demand)
+    claude-code
     gemini-cli
     mods
 
