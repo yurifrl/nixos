@@ -5,7 +5,7 @@
     # Sunshine v2026.914.233613 (GHSA-fp6g-27w5-489j high-severity Linux fix):
     # the host's pinned nixpkgs still ships 2025.924, so the stream host is
     # built from this dedicated pin (sunshine bumped @ 67d12d232 + darwin fix).
-    nixpkgs-sunshine.url = "github:NixOS/nixpkgs/de08d3cedc2730a71f4d086a490ba9be6871f983";
+    nixpkgs-sunshine.url = "github:NixOS/nixpkgs/ec808ecce96b09cf49ed3d5ce473426b183b59c8";
     # Lutris 0.5.22 (the host's pinned nixpkgs ships 0.5.19; Lutris itself
     # demands >= 0.5.22 for the Battle.net installer flows).
     nixpkgs-lutris.url = "github:NixOS/nixpkgs/d06395a79178570d94367940dd239b9af91c9838";
