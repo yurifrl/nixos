@@ -91,17 +91,17 @@
     },
     "nixpkgs-lutris": {
       "locked": {
-        "lastModified": 1791478423,
-        "narHash": "sha256-BuiQ9ei3PjxAc9OgGoMZIw9VA4nkVUvnRrTiaIRbkrA=",
+        "lastModified": 1794680347,
+        "narHash": "sha256-BZSqrfo9R17opDnL8P8KsPiEHXjiaHOCMc9YdcwmluI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d06395a79178570d94367940dd239b9af91c9838",
+        "rev": "ec808ecce96b09cf49ed3d5ce473426b183b59c8",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d06395a79178570d94367940dd239b9af91c9838",
+        "rev": "ec808ecce96b09cf49ed3d5ce473426b183b59c8",
         "type": "github"
       }
     },
