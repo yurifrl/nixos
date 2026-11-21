@@ -8,7 +8,7 @@
     nixpkgs-sunshine.url = "github:NixOS/nixpkgs/de08d3cedc2730a71f4d086a490ba9be6871f983";
     # Lutris 0.5.22 (the host's pinned nixpkgs ships 0.5.19; Lutris itself
     # demands >= 0.5.22 for the Battle.net installer flows).
-    nixpkgs-lutris.url = "github:NixOS/nixpkgs/d06395a79178570d94367940dd239b9af91c9838";
+    nixpkgs-lutris.url = "github:NixOS/nixpkgs/dd7d9b20b4482430d6912ba376e57d40c3ade48f";
     deploy-rs.url = "github:serokell/deploy-rs";
     cly.url = "github:yurifrl/cly";
     # (go.mod requires >= 1.25.8). Letting it use its own nixos-unstable pin means
